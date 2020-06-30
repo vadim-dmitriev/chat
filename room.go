@@ -11,10 +11,15 @@ var (
 	upgrader = websocket.Upgrader{}
 )
 
+type message struct {
+	text   []byte
+	sender *client
+}
+
 type room struct {
 	clients map[*client]struct{}
 
-	forward chan []byte
+	forward chan message
 	join    chan *client
 	leave   chan *client
 }
@@ -22,7 +27,7 @@ type room struct {
 func newRoom() *room {
 	return &room{
 		clients: make(map[*client]struct{}),
-		forward: make(chan []byte),
+		forward: make(chan message),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 	}
@@ -33,7 +38,10 @@ func (r *room) Run() {
 		select {
 		case msg := <-r.forward:
 			for client := range r.clients {
-				client.send <- msg
+				if msg.sender == client {
+					continue
+				}
+				client.send <- msg.text
 			}
 
 		case newClient := <-r.join:
