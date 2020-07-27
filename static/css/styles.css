@@ -1,0 +1,9 @@
+body {
+    /* background-color: black; */
+}
+
+#container {
+    border: 1px black solid;
+    background-color: #f5edf0;
+    margin: 0 20% auto;
+}

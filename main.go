@@ -28,14 +28,31 @@ func (th *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// type static struct {
+// 	dirPath string
+// }
+
+// func (s static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// 	// strings.SplitAfter(r.RequestURI)
+// 	fmt.Println(r.RequestURI)
+// 	http.ServeFile(w, r, r.RequestURI)
+// }
+
+func serveMainPage(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "static/html/chat.html")
+}
+
 func main() {
 	room := newRoom()
 	sound := newSound()
+	static := http.FileServer(http.Dir("static"))
 
+	http.Handle("/static/", http.StripPrefix("/static/", static))
 	http.Handle("/notify", sound)
 	http.Handle("/room", room)
-	http.Handle("/login", &templateHandler{filename: "login.html"})
-	http.Handle("/", &templateHandler{filename: "mainPage.html"})
+	// http.Handle("/login", &templateHandler{filename: "login.html"})
+	// http.Handle("/", &templateHandler{filename: "mainPage.html"})
+	http.HandleFunc("/", serveMainPage)
 
 	exitChan := make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt)
