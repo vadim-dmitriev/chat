@@ -2,41 +2,11 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
-	"sync"
 	"syscall"
 )
-
-type templateHandler struct {
-	sync.Once
-
-	filename string
-	template *template.Template
-}
-
-func (th *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	th.Do(func() {
-		th.template = template.Must(template.ParseFiles(path.Join("templates", th.filename)))
-	})
-
-	if err := th.template.Execute(w, r); err != nil {
-		fmt.Fprintf(w, "%s", err)
-	}
-}
-
-// type static struct {
-// 	dirPath string
-// }
-
-// func (s static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-// 	// strings.SplitAfter(r.RequestURI)
-// 	fmt.Println(r.RequestURI)
-// 	http.ServeFile(w, r, r.RequestURI)
-// }
 
 func serveMainPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "static/html/chat.html")
@@ -44,14 +14,11 @@ func serveMainPage(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	room := newRoom()
-	sound := newSound()
+
 	static := http.FileServer(http.Dir("static"))
 
 	http.Handle("/static/", http.StripPrefix("/static/", static))
-	http.Handle("/notify", sound)
-	http.Handle("/room", room)
-	// http.Handle("/login", &templateHandler{filename: "login.html"})
-	// http.Handle("/", &templateHandler{filename: "mainPage.html"})
+	http.Handle("/ws", room)
 	http.HandleFunc("/", serveMainPage)
 
 	exitChan := make(chan os.Signal)
