@@ -29,8 +29,7 @@
         <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
         <script>
             $(function() {
-                var cookies = null;
-                var localStorage = null;
+                var username = getCookie("username");
                 var msgBox = $("#chatbox textarea")
                 var messages = $("#messages")
                 enterPushed = new KeyboardEvent("")
@@ -41,6 +40,7 @@
                         return false;
                     }
                     socket.send(msgBox.val());
+                    messages.append($("<li>").text(username + ": " +msgBox.val()));
                     msgBox.val("");
                     return false;
                 });
@@ -52,6 +52,7 @@
                             return false;
                         }
                         socket.send(msgBox.val());
+                        messages.append($("<li>").text(username + ": " +msgBox.val()));
                         msgBox.val("");
                         return false;
                     }
@@ -79,6 +80,22 @@
                 console.log(document.cookie)
 
             });
-        </script> -->
+
+            function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = cookies[i].trim();
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            };
+        </script>
     </body>
 </html>

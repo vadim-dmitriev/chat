@@ -29,7 +29,7 @@ func (c *client) read() {
 			return
 		}
 
-		c.room.forward <- append(append(c.name, ':', ' '), msg...)
+		c.room.forward <- message{text: append(append(c.name, ':', ' '), msg...), sender: c}
 	}
 
 }
