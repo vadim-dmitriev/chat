@@ -7,9 +7,13 @@
     </head>
     <body>
         <div id="container">
-            <div id="app"></div>
+            <div id="app">
+                <user-panel></user-panel>
+                <conversations :conversations="conversations"></conversations>
+		        <!-- <chat></chat> -->
+            </div>
         </div>
-        <script src="static/js/script.js"></script>
+        <script src="static/js/chat.js"></script>
 
         <!-- <audio id="chatAudio">
             <source src="notify" type="audio/ogg">

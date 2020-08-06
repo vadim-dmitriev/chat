@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,7 +10,21 @@ import (
 )
 
 func serveMainPage(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "static/html/chat.html")
+	http.ServeFile(w, r, "static/html/login.html")
+}
+
+func auth(w http.ResponseWriter, r *http.Request) {
+	var requestBody = make(map[string]string)
+	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		fmt.Fprintf(w, "%s", err)
+		return
+	}
+	if requestBody["login"] == "vadim" && requestBody["password"] == "1" {
+		fmt.Fprintf(w, "%s", "Success")
+	} else {
+		fmt.Fprintf(w, "%s", "Login or password incorrect")
+	}
 }
 
 func main() {
@@ -20,6 +35,9 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", static))
 	http.Handle("/ws", room)
 	http.HandleFunc("/", serveMainPage)
+	http.HandleFunc("/api/v1/auth", auth)
+
+	// http.HandleFunc("/", serveMainPage)
 
 	exitChan := make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt)

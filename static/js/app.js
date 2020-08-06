@@ -76,14 +76,8 @@ Vue.component("chat", {
 	}
 })
 
-new Vue({
+var app = new Vue({
 	el: '#app',
-	template: `
-	<div>
-		<user-panel />
-		<conversations v-bind:conversations="conversations"/>
-		<!-- <chat /> -->
-	</div>`,
 	data: {
 		conversations: [
 			{lastMessage: "Добрый день, ок"},
@@ -99,6 +93,7 @@ new Vue({
 		messages: [],
 		connection: null,
 		},
+
 	created: function() {
 		this.connection = new WebSocket("ws://"+window.location.host+"/ws");
 	},

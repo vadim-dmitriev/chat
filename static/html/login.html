@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Login</title>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    </head>
+    <body>
+        <div id="app">
+            <input v-model="login" type="text"/>
+            <input v-model="password" type="password"/>
+            <button v-on:click="doAuth">Sing in</button>
+        </div>
+
+        <script src="static/js/login.js"></script>
+    </body>
+</html>
