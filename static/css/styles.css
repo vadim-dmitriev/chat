@@ -60,7 +60,7 @@ html, body, ul {
     box-sizing: border-box;
 }
 
-#chat { 
+.chat { 
     position: absolute;
     width: 883px;
     height: 931px;

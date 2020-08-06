@@ -28,9 +28,9 @@ func main() {
 	go room.Run()
 
 	server := http.Server{
-		Addr: ":8081",
+		Addr: "0.0.0.0:8081",
 	}
-	fmt.Println("Server started on :8081...")
+	fmt.Println("Server started on 0.0.0.0:8081...")
 	go server.ListenAndServe()
 
 	fmt.Printf("\rServer shuting down: %s\n", <-exitChan)
