@@ -1,49 +1,33 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/vadim-dmitriev/chat/app"
 )
 
-func serveMainPage(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "static/html/login.html")
-}
-
-func auth(w http.ResponseWriter, r *http.Request) {
-	var requestBody = make(map[string]string)
-	defer r.Body.Close()
-	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-		fmt.Fprintf(w, "%s", err)
-		return
-	}
-	if requestBody["login"] == "vadim" && requestBody["password"] == "1" {
-		fmt.Fprintf(w, "%s", "Success")
-	} else {
-		fmt.Fprintf(w, "%s", "Login or password incorrect")
-	}
-}
-
 func main() {
-	room := newRoom()
+	app := app.New()
 
-	static := http.FileServer(http.Dir("static"))
+	http.Handle("/api/v1/auth", app.AuthHandler)
+	http.HandleFunc("/singin", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/html/login.html")
+	})
 
-	http.Handle("/static/", http.StripPrefix("/static/", static))
-	http.Handle("/ws", room)
-	http.HandleFunc("/", serveMainPage)
-	http.HandleFunc("/api/v1/auth", auth)
+	http.Handle("/singup", app.RegisterHandler)
+	http.Handle("/ws", app.WebSocketHandler)
+	http.Handle("/", app.ChatHandler)
+	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
 
-	// http.HandleFunc("/", serveMainPage)
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	exitChan := make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt)
 	signal.Notify(exitChan, syscall.SIGTERM)
-
-	go room.Run()
 
 	server := http.Server{
 		Addr: "0.0.0.0:8081",
