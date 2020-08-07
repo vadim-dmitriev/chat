@@ -15,11 +15,11 @@ type App struct {
 	Storage storage.Storager
 }
 
-func New() App {
+func New(s storage.Storager) App {
 	return App{
-		AuthHandler:      newAuthHandler(),
+		AuthHandler:      newAuthHandler(s),
 		ChatHandler:      newChatHandler(),
-		RegisterHandler:  newRegisterHandler(),
+		RegisterHandler:  newRegisterHandler(s),
 		WebSocketHandler: newWebSocketHandler(),
 		Storage:          storage.NewSqlite(),
 	}

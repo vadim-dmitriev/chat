@@ -8,17 +8,24 @@ import (
 	"syscall"
 
 	"github.com/vadim-dmitriev/chat/app"
+	"github.com/vadim-dmitriev/chat/storage"
 )
 
 func main() {
-	app := app.New()
+	s := storage.NewSqlite()
+	app := app.New(s)
 
 	http.Handle("/api/v1/auth", app.AuthHandler)
-	http.HandleFunc("/singin", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "static/html/login.html")
+	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/html/signin.html")
 	})
 
-	http.Handle("/singup", app.RegisterHandler)
+	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "static/html/signup.html")
+	})
+
+	http.Handle("/api/v1/register", app.RegisterHandler)
+
 	http.Handle("/ws", app.WebSocketHandler)
 	http.Handle("/", app.ChatHandler)
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})

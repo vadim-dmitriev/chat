@@ -17,7 +17,11 @@ var app = new Vue({
                 }),
             }).then(
                 response => response.text().then(
-                    text => console.log(text)
+                    text => {
+                        if (text === "ok") {
+                            window.location.replace("/");
+                        }
+                    }
                 ))
         }
     }

@@ -7,13 +7,17 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/vadim-dmitriev/chat/storage"
 )
 
 type authHandler struct {
+	s storage.Storager
 }
 
-func newAuthHandler() authHandler {
-	return authHandler{}
+func newAuthHandler(s storage.Storager) authHandler {
+	return authHandler{
+		s: s,
+	}
 }
 
 func (ah authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -23,17 +27,13 @@ func (ah authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	fmt.Println(requestBody)
-
-	if requestBody["login"] == "vadim" && requestBody["password"] == "1" {
+	if ah.s.AuthUser(requestBody["login"], requestBody["password"]) {
 		http.SetCookie(w, &http.Cookie{
 			Name:  "username",
 			Value: requestBody["login"],
 			Path:  "/",
 		})
-		http.Redirect(w, r, "/", http.StatusMovedPermanently)
-	} else {
-		// http.Redirect(w, r, "/signin", http.StatusMovedPermanently)
+		w.Write([]byte("ok"))
 	}
 }
 
@@ -65,13 +65,30 @@ func (wsh webSocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-type registerHandler struct{}
+type registerHandler struct {
+	s storage.Storager
+}
 
-func newRegisterHandler() registerHandler {
-	return registerHandler{}
+func newRegisterHandler(s storage.Storager) registerHandler {
+	return registerHandler{
+		s,
+	}
 }
 
 func (rh registerHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var requestBody = make(map[string]string)
+	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		panic(err)
+	}
+
+	fmt.Println(requestBody)
+
+	if err := rh.s.RegisterUser(requestBody["login"], requestBody["password"]); err != nil {
+		panic(err)
+	}
+
+	fmt.Fprintf(w, "ok")
 
 }
 
@@ -84,10 +101,10 @@ func newChatHandler() chatHandler {
 func (ch chatHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, err := r.Cookie("username")
 	if err == http.ErrNoCookie {
-		fmt.Println(err)
-		http.Redirect(w, r, "/singin", http.StatusMovedPermanently)
+		fmt.Println("NO COOKIES")
+		http.Redirect(w, r, "/signin", http.StatusPermanentRedirect)
 		return
 	}
-	http.ServeFile(w, r, "static/html/chat.html")
 
+	http.ServeFile(w, r, "static/html/chat.html")
 }

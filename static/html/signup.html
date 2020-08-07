@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Sign up</title>
+        <script src="static/js/vuejs.js"></script>
+    </head>
+    <body>
+        <div id="app">
+            <input placeholder="Логин" autofocus=1 v-model="login" type="text"/>
+            <br>
+            <input placeholder="Пароль" v-model="password" type="password"/>
+            <br>
+            <button v-on:click="doRegister">Sign up</button>
+        </div>
+
+        <script src="static/js/signup.js"></script>
+    </body>
+</html>
