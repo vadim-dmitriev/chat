@@ -6,23 +6,22 @@ var app = new Vue({
     },
     methods: {
         doAuth: function() {
-            fetch("/api/v1/auth", {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8'
-                },
-                body: JSON.stringify({
-                    "login": this.login,
-                    "password": this.password,
-                }),
-            }).then(
-                response => response.text().then(
-                    text => {
-                        if (text === "ok") {
-                            window.location.replace("/");
-                        }
-                    }
-                ))
+            var xhr = new XMLHttpRequest();
+
+            xhr.open("POST", "/api/v1/auth", true)
+
+            xhr.send(JSON.stringify({
+                "login": this.login,
+                "password": this.password,
+            }));
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState != 4) return;
+
+                if (xhr.responseText === "ok") {
+                    window.location.replace("/");
+                }
+            }
         }
     }
 })
