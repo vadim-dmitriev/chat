@@ -8,7 +8,9 @@
     <body>
         <div id="container">
             <div id="app">
-                <user-panel></user-panel>
+                <user-panel v-on:search-user="searchUser">
+                    <search-user-panel></search-user-panel>
+                </user-panel>
                 <conversations :conversations="conversations"></conversations>
 		        <!-- <chat></chat> -->
             </div>

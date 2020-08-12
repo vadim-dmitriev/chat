@@ -3,6 +3,8 @@ package app
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
 func (a App) AuthHandler(w http.ResponseWriter, r *http.Request) {
@@ -23,11 +25,29 @@ func (a App) AuthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
+	var requestBody = make(map[string]string)
+	defer r.Body.Close()
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		panic(err)
+	}
 
+	if err := a.Storage.RegisterUser(requestBody["login"], requestBody["password"]); err != nil {
+		panic(err)
+	}
+
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 func (a App) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
+	upgrager := websocket.Upgrader{}
+	conn, err := upgrager.Upgrade(w, r, nil)
+	if err != nil {
+		panic(err)
+	}
 
+	newUser := User{conn}
+	a.Users[conn] = newUser
+	go newUser.ListenAndServe()
 }
 
 // type authHandler struct {

@@ -17,34 +17,41 @@ func NewSqlite() Storager {
 		panic(err)
 	}
 
-	db.Exec(`CREATE table users (
-		id int NOT NULL PRIMARY KEY,
-		login text NOT NULL,
+	_, err = db.Exec(`CREATE table users (
+		login text NOT NULL PRIMARY KEY,
 		password text NOT NULL
 	);`)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	db.Exec(`CREATE TABLE conversations (
+	_, err = db.Exec(`CREATE TABLE conversations (
 		id int not null primary key,
-		name text,
-		member int,
-		FOREIGN KEY (member) references members (conversation)
+		name text NOT NULL
 	);`)
-
-	db.Exec(`CREATE table messages (
+	// if err != nil {
+	// 	panic(err)
+	// }
+	_, err = db.Exec(`CREATE table messages (
 		id int NOT NULL PRIMARY KEY,
 		value text,
-		sender int NOT NULL,
+		sender text NOT NULL,
 		receiver int NOT NULL,
-		foreign key (sender) references users (id),
-		foreign key (receiver) references users (id)
+		foreign key (sender) references users (login),
+		foreign key (receiver) references conversations (id)
 	);`)
-
-	db.Exec(`CREATE table members (
+	// if err != nil {
+	// 	panic(err)
+	// }
+	_, err = db.Exec(`CREATE table members (
 		user int not null,
 		conversation int not null,
 		foreign key (user) references users (id),
 		foreign key (conversation) references conversations (id)
 	);`)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	return Sqlite{
 		db,
