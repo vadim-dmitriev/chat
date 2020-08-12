@@ -9,45 +9,56 @@ import (
 
 type App struct {
 	Storage storage.Storager
-	Users   map[*websocket.Conn]User
+	Users   map[string]*User
 }
 
 type User struct {
-	conn *websocket.Conn
+	username string
+	conn     *websocket.Conn
 }
 
-func (u User) ListenAndServe() {
-	go u.read()
-	u.write()
-}
+func (a App) ServeUser(conn *websocket.Conn) {
+	// read function
+	go func() {
+		request := make(map[string]interface{})
+		response := make(map[string]interface{})
 
-func (u User) read() {
-	message := make(map[string]interface{})
+		for {
+			if err := conn.ReadJSON(&request); err != nil {
+				fmt.Println(err)
+				break
+			}
+			switch request["action"] {
+			case "searchUser":
+				fmt.Println(request["action"])
 
-	for {
-		if err := u.conn.ReadJSON(&message); err != nil {
-			fmt.Println(err)
-			break
+				response["action"] = "newConversationWith"
+				response["username"] = request["username"]
+
+				if a.Storage.IsUserExists(request["username"].(string)) {
+					response["isUserExists"] = true
+				} else {
+					response["isUserExists"] = false
+				}
+				conn.WriteJSON(response)
+
+			case "sendMessage":
+				fmt.Println(request["action"], request)
+			}
 		}
-		switch message["action"] {
-		case "searchUser":
-			fmt.Println("New SEARCHUSER message")
-			u.conn.WriteJSON(map[string]interface{}{
-				"action":      "newConversation",
-				"name":        message["username"],
-				"lastMessage": "Нет сообщений...",
-			})
-		}
-	}
+	}()
+
+	// write function
+	// TODO
 }
 
-func (u User) write() {
+func read() {
 
 }
 
 func New(s storage.Storager) App {
 	return App{
 		Storage: s,
-		Users:   make(map[*websocket.Conn]User),
+		Users:   make(map[string]*User),
 	}
 }

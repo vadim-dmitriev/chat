@@ -27,15 +27,19 @@ func main() {
 	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "static/html/signup.html")
 	})
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		_, err := r.Cookie("username")
-		if err == http.ErrNoCookie {
-			http.Redirect(w, r, "/signin", http.StatusPermanentRedirect)
-			return
-		}
+	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	_, err := r.Cookie("username")
+	// 	if err == http.ErrNoCookie {
+	// 		fmt.Println("NO COOKIE")
+	// 		http.Redirect(w, r, "/signin", http.StatusTemporaryRedirect)
+	// 		return
+	// 	}
 
+	// 	http.ServeFile(w, r, "static/html/chat.html")
+	// })
+	http.HandleFunc("/", app.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "static/html/chat.html")
-	})
+	}))
 
 	exitChan := make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt)

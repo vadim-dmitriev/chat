@@ -8,11 +8,19 @@
     <body>
         <div id="container">
             <div id="app">
+
                 <user-panel v-on:search-user="searchUser">
-                    <search-user-panel></search-user-panel>
+                    <search-user-panel />
                 </user-panel>
-                <conversations :conversations="conversations"></conversations>
-		        <!-- <chat></chat> -->
+
+                <conversations :conversations="conversations"
+                                v-on:change-conversation="changeConversation"
+                />
+
+                <chat :messages="messages"
+                       v-on:send-message="sendMessage"
+                />
+
             </div>
         </div>
         <script src="static/js/chat.js"></script>

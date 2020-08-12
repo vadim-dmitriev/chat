@@ -58,9 +58,16 @@ func NewSqlite() Storager {
 	}
 }
 
+func (s Sqlite) IsUserExists(login string) bool {
+	if err := s.QueryRow(`SELECT login FROM users WHERE login = $1`, login).Scan(); err == sql.ErrNoRows {
+		return false
+	}
+	return true
+}
+
 func (s Sqlite) RegisterUser(login, passowrd string) error {
 	// TODO: Проверить, есть ли пользователь с таким же именем
-	result, err := s.Exec("insert into users (login, password) values ($1, $2)", login, passowrd)
+	result, err := s.Exec(`insert into users (login, password) values ($1, $2)`, login, passowrd)
 	if err != nil {
 		return err
 	}
@@ -71,13 +78,12 @@ func (s Sqlite) RegisterUser(login, passowrd string) error {
 }
 
 func (s Sqlite) AuthUser(login, password string) bool {
-	// select password from users WHERE login = "123";
-	row := s.QueryRow(`SELECT password FROM users WHERE login = $1`, login)
-
 	var passwordFromDB string
-	if err := row.Scan(&passwordFromDB); err != nil {
-		panic(err)
+	if err := s.QueryRow(`SELECT password FROM users WHERE login = $1`, login).Scan(&passwordFromDB); err == sql.ErrNoRows {
+		return false
 	}
+
+	fmt.Println("equals:", password == passwordFromDB)
 
 	if password != passwordFromDB {
 		return false

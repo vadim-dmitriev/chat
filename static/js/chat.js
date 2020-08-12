@@ -94,6 +94,7 @@ Vue.component("conversations", {
 			if (this.choosedConversation != index) {
 				this.isChoosed = new Array(this.conversations.length).fill(false);
 				this.isChoosed[index] = true;
+				this.$emit("change-conversation", this.conversations[index].name);
 			}
 		}
 	},
@@ -102,11 +103,13 @@ Vue.component("conversations", {
 			this.change(this.conversations.length-1)
 		}
 	}
-})
+});
 
 Vue.component("chat", {
 	data: function() {
-		return {}
+		return {
+			currentMessage: "",
+		}
 	},
 	props: ["messages"],
 	template: `
@@ -116,20 +119,21 @@ Vue.component("chat", {
 					{{ message }}
 				</li>
 			</ul>
-			<div id="control">
+			<div>
 				<input v-model="currentMessage" v-on:keyup.enter="sendMessage"/>
 				<button v-on:click="sendMessage" value="Send">Send</button>
 			</div>
 		</div>`,
 	methods: {
 		sendMessage: function() {
-			// if (this.currentMessage !== "") {
-			// 	this.messages.push(this.currentMessage);
-			// 	this.currentMessage = "";
-			// }
+			if (this.currentMessage !== "") {
+				this.$emit("send-message", this.currentMessage)
+				this.messages.push(this.currentMessage)
+				this.currentMessage = ""
+			}
 		},
 	}
-})
+});
 
 var app = new Vue({
 	el: '#app',
@@ -140,10 +144,9 @@ var app = new Vue({
 			{name: "Веррроника", lastMessage: "kek"},
 			{name: "Павлик", lastMessage: "Отвечаю на вопросы которые задает сегодня..."},
 		],
-		currentMessage: "",
-		messages: [],
+		currentConversation: "",
 		ws: null,
-		},
+	},
 
 	created: function() {
 		const conversations = this.conversations
@@ -152,29 +155,43 @@ var app = new Vue({
 
 		this.ws.onmessage = function(event) {
 			message = JSON.parse(event.data)
+			console.log(message);
 
 			switch (message.action) {
-			case "newConversation":
-				conversations.push({
-					"name": message.name,
-					"lastMessage": message.lastMessage,
-				});
+			case "newConversationWith":
+				if (message.isUserExists) {
+					conversations.push({
+						name: message.username,
+					});
+				}
 				break;
 			}
 		}
+
 	},
 	destroyed: function() {
 		this.ws.close()
 	},
 	methods: {
 		searchUser: function(username) {
-			// alert(username);
 			this.ws.send(
 				JSON.stringify({
-					"action": "searchUser",
-					"username": username
+					action: "searchUser",
+					username: username
 				})
-			)
+			);
+		},
+		sendMessage: function(message) {
+			this.ws.send(
+				JSON.stringify({
+					action: "sendMessage",
+					conversationName: this.currentConversation,
+					message: message
+				})
+			);
+		},
+		changeConversation: function(currentChoosedConversation) {
+			this.choosedConversation = currentChoosedConversation;
 		}
 	}
 });
