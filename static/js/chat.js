@@ -5,6 +5,8 @@ Vue.component("conversation", {
 	props: ["index", "conversation", "isChoosed"],
 	template: `
 		<div class="conversation" v-bind:class="{ conversationClicked: this.isChoosed }">
+			<strong>{{ conversation.name }}</strong>
+			<br/><br/>
 			{{ conversation.lastMessage }}
 		</div>`,
 	methods: {
@@ -15,13 +17,62 @@ Vue.component("conversation", {
 	}
 })
 
+Vue.component("search-user-panel", {
+	data: function () {
+		return {
+			username: ""
+		}
+	},
+	props: ["isActive"],
+	template: `
+		<div v-show="isActive">
+			<button v-on:click="hidePanel">x</button>
+			<input v-model="username" />
+			<button v-on:click="searchUser">Search</button>
+		</div>
+	`,
+	methods: {
+		hidePanel: function() {
+			this.$emit("hidePanel");
+		},
+		searchUser: function() {
+			if (this.username === "") {
+				return
+			}
+
+			this.$emit("search-user", this.username)
+			this.username = ""
+			this.hidePanel()
+		}
+	}
+})
+
 Vue.component("user-panel", {
 	data: function () {
-		return {}
+		return {
+			isUserSearchPanelActive: false,
+		}
 	},
 	template: `
 		<div class="user-panel">
+			<div style="border: 1px black solid;" v-on:click="showSearchUserPanel">
+				<p>Найти пользователя</p>
+			</div>
+			<search-user-panel v-bind:isActive="isUserSearchPanelActive"
+							   v-on:hidePanel="hideSearchUserPanel"
+							   v-on:search-user="searchUser"/>
 		</div>`, 
+	methods: {
+		showSearchUserPanel: function() {
+			this.isUserSearchPanelActive = true;
+		},
+		hideSearchUserPanel: function() {
+			this.isUserSearchPanelActive = false;
+		},
+		searchUser: function(username) {
+			this.$emit("search-user", username)
+		}
+	}
 })
 
 Vue.component("conversations", {
@@ -40,18 +91,25 @@ Vue.component("conversations", {
 		</div>`,
 	methods: {
 		change: function(index) {
-			console.log(this.isChoosed)
 			if (this.choosedConversation != index) {
 				this.isChoosed = new Array(this.conversations.length).fill(false);
 				this.isChoosed[index] = true;
+				this.$emit("change-conversation", this.conversations[index].name);
 			}
 		}
+	},
+	watch: {
+		conversations: function() {
+			this.change(this.conversations.length-1)
+		}
 	}
-})
+});
 
 Vue.component("chat", {
 	data: function() {
-		return {}
+		return {
+			currentMessage: "",
+		}
 	},
 	props: ["messages"],
 	template: `
@@ -61,40 +119,79 @@ Vue.component("chat", {
 					{{ message }}
 				</li>
 			</ul>
-			<div id="control">
+			<div>
 				<input v-model="currentMessage" v-on:keyup.enter="sendMessage"/>
 				<button v-on:click="sendMessage" value="Send">Send</button>
 			</div>
 		</div>`,
 	methods: {
 		sendMessage: function() {
-			// if (this.currentMessage !== "") {
-			// 	this.messages.push(this.currentMessage);
-			// 	this.currentMessage = "";
-			// }
+			if (this.currentMessage !== "") {
+				this.$emit("send-message", this.currentMessage)
+				this.messages.push(this.currentMessage)
+				this.currentMessage = ""
+			}
 		},
 	}
-})
+});
 
 var app = new Vue({
 	el: '#app',
 	data: {
 		conversations: [
-			{lastMessage: "Добрый день, ок"},
-			{lastMessage: "Привет! Во сколько ты приедешь?"},
-			{lastMessage: "Отвечаю на вопросы которые задает сегодня..."},
-			{lastMessage: "kek"},
-			{lastMessage: "Поздравляем, Ваш номер подтвержден!"},
-			{lastMessage: "Any other questions? Something didn`t..."},
-			{lastMessage: "Mac Miller - Dunno"},
-			{lastMessage: "Отвечаю на вопросы которые задает сегодня..."},
+			{name: "Витя", lastMessage: "Добрый день, ок"},
+			{name: "Сережа", lastMessage: "Привет! Во сколько ты приедешь?"},
+			{name: "Веррроника", lastMessage: "kek"},
+			{name: "Павлик", lastMessage: "Отвечаю на вопросы которые задает сегодня..."},
 		],
-		currentMessage: "",
-		messages: [],
-		connection: null,
-		},
+		currentConversation: "",
+		ws: null,
+	},
 
 	created: function() {
-		this.connection = new WebSocket("ws://"+window.location.host+"/ws");
+		const conversations = this.conversations
+
+		this.ws = new WebSocket("ws://"+window.location.host+"/api/v1/ws");
+
+		this.ws.onmessage = function(event) {
+			message = JSON.parse(event.data)
+			console.log(message);
+
+			switch (message.action) {
+			case "newConversationWith":
+				if (message.isUserExists) {
+					conversations.push({
+						name: message.username,
+					});
+				}
+				break;
+			}
+		}
+
 	},
+	destroyed: function() {
+		this.ws.close()
+	},
+	methods: {
+		searchUser: function(username) {
+			this.ws.send(
+				JSON.stringify({
+					action: "searchUser",
+					username: username
+				})
+			);
+		},
+		sendMessage: function(message) {
+			this.ws.send(
+				JSON.stringify({
+					action: "sendMessage",
+					conversationName: this.currentConversation,
+					message: message
+				})
+			);
+		},
+		changeConversation: function(currentChoosedConversation) {
+			this.choosedConversation = currentChoosedConversation;
+		}
+	}
 });

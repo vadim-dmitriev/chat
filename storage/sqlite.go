@@ -17,43 +17,57 @@ func NewSqlite() Storager {
 		panic(err)
 	}
 
-	db.Exec(`CREATE table users (
-		id int NOT NULL PRIMARY KEY,
-		login text NOT NULL,
+	_, err = db.Exec(`CREATE table users (
+		login text NOT NULL PRIMARY KEY,
 		password text NOT NULL
 	);`)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	db.Exec(`CREATE TABLE conversations (
+	_, err = db.Exec(`CREATE TABLE conversations (
 		id int not null primary key,
-		name text,
-		member int,
-		FOREIGN KEY (member) references members (conversation)
+		name text NOT NULL
 	);`)
-
-	db.Exec(`CREATE table messages (
+	// if err != nil {
+	// 	panic(err)
+	// }
+	_, err = db.Exec(`CREATE table messages (
 		id int NOT NULL PRIMARY KEY,
 		value text,
-		sender int NOT NULL,
+		sender text NOT NULL,
 		receiver int NOT NULL,
-		foreign key (sender) references users (id),
-		foreign key (receiver) references users (id)
+		foreign key (sender) references users (login),
+		foreign key (receiver) references conversations (id)
 	);`)
-
-	db.Exec(`CREATE table members (
+	// if err != nil {
+	// 	panic(err)
+	// }
+	_, err = db.Exec(`CREATE table members (
 		user int not null,
 		conversation int not null,
 		foreign key (user) references users (id),
 		foreign key (conversation) references conversations (id)
 	);`)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	return Sqlite{
 		db,
 	}
 }
 
+func (s Sqlite) IsUserExists(login string) bool {
+	if err := s.QueryRow(`SELECT login FROM users WHERE login = $1`, login).Scan(); err == sql.ErrNoRows {
+		return false
+	}
+	return true
+}
+
 func (s Sqlite) RegisterUser(login, passowrd string) error {
 	// TODO: Проверить, есть ли пользователь с таким же именем
-	result, err := s.Exec("insert into users (login, password) values ($1, $2)", login, passowrd)
+	result, err := s.Exec(`insert into users (login, password) values ($1, $2)`, login, passowrd)
 	if err != nil {
 		return err
 	}
@@ -64,13 +78,12 @@ func (s Sqlite) RegisterUser(login, passowrd string) error {
 }
 
 func (s Sqlite) AuthUser(login, password string) bool {
-	// select password from users WHERE login = "123";
-	row := s.QueryRow(`SELECT password FROM users WHERE login = $1`, login)
-
 	var passwordFromDB string
-	if err := row.Scan(&passwordFromDB); err != nil {
-		panic(err)
+	if err := s.QueryRow(`SELECT password FROM users WHERE login = $1`, login).Scan(&passwordFromDB); err == sql.ErrNoRows {
+		return false
 	}
+
+	fmt.Println("equals:", password == passwordFromDB)
 
 	if password != passwordFromDB {
 		return false
