@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"golang.org/x/crypto/bcrypt"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -81,12 +83,17 @@ func (s Sqlite) IsUserExists(username string) bool {
 }
 
 // RegisterUser заносит новую запись в таблицу users
-func (s Sqlite) RegisterUser(username, passowrd string) error {
+func (s Sqlite) RegisterUser(username, password string) error {
 	if s.IsUserExists(username) {
 		return fmt.Errorf("username %s already exists", username)
 	}
 
-	if _, err := s.Exec(`INSERT INTO users (username, password) VALUES ($1, $2)`, username, passowrd); err != nil {
+	fingerprint, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	if _, err := s.Exec(`INSERT INTO users (username, password) VALUES ($1, $2)`, username, string(fingerprint)); err != nil {
 		return err
 	}
 
@@ -101,7 +108,11 @@ func (s Sqlite) AuthUser(username, password string) bool {
 		return false
 	}
 
-	return password == passwordFromDB
+	if err := bcrypt.CompareHashAndPassword([]byte(passwordFromDB), []byte(password)); err == bcrypt.ErrMismatchedHashAndPassword {
+		return false
+	}
+
+	return true
 }
 
 // GetUserConversations возвращает список бесед пользователя
