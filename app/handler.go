@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -34,14 +35,14 @@ func (a App) AuthHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	if !a.Storage.AuthUser(requestBody["login"], requestBody["password"]) {
+	if !a.Storage.AuthUser(requestBody["username"], requestBody["password"]) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:  "username",
-		Value: requestBody["login"],
+		Value: requestBody["username"],
 		Path:  "/",
 	})
 
@@ -58,15 +59,19 @@ func (a App) AuthHandler(w http.ResponseWriter, r *http.Request) {
 func (a App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var requestBody = make(map[string]string)
 	defer r.Body.Close()
+
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "ERROR while 'RegisterHandler': %s\n", err)
+		return
+	}
+	if err := a.Storage.RegisterUser(requestBody["username"], requestBody["password"]); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "ERROR while 'RegisterHandler': %s\n", err)
+		return
 	}
 
-	if err := a.Storage.RegisterUser(requestBody["login"], requestBody["password"]); err != nil {
-		panic(err)
-	}
-
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (a App) WebSocketHandler(w http.ResponseWriter, r *http.Request) {

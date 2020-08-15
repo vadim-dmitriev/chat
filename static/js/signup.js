@@ -6,24 +6,19 @@ var app = new Vue({
     },
     methods: {
         doRegister: function() {
-            fetch("/api/v1/register", {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json;charset=utf-8'
-                },
-                body: JSON.stringify({
-                    "login": this.login,
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/api/v1/register", false);
+
+            xhr.send(
+                JSON.stringify({
+                    "username": this.login,
                     "password": this.password,
-                }),
-            }).then(
-                response => response.text().then(
-                    text => {
-                        if (text === "ok") {
-                            window.location.replace("/signin");
-                        }
-                    }
-                ))
+                })
+            );
+
+            if (xhr.status == 200) {
+                window.location.replace("/signin");
+            }
         }
     }
-
-})
+});

@@ -7,91 +7,105 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// Sqlite имплементирует интерфейс Storager
 type Sqlite struct {
 	*sql.DB
 }
 
+// NewSqlite создает таблицы в БД и возвращает
+// пул соединений к ней
 func NewSqlite() Storager {
 	db, err := sql.Open("sqlite3", "app.db")
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = db.Exec(`CREATE table users (
-		login text NOT NULL PRIMARY KEY,
-		password text NOT NULL
-	);`)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	db.Exec(`
+		CREATE table 'users' (
+			'user_id' INTEGER PRIMARY KEY,
+			'username' text NOT NULL,
+			'password' text NOT NULL
+		);
+	`)
 
-	_, err = db.Exec(`CREATE TABLE conversations (
-		id int not null primary key,
-		name text NOT NULL
-	);`)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	_, err = db.Exec(`CREATE table messages (
-		id int NOT NULL PRIMARY KEY,
-		value text,
-		sender text NOT NULL,
-		receiver int NOT NULL,
-		foreign key (sender) references users (login),
-		foreign key (receiver) references conversations (id)
-	);`)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	_, err = db.Exec(`CREATE table members (
-		user int not null,
-		conversation int not null,
-		foreign key (user) references users (id),
-		foreign key (conversation) references conversations (id)
-	);`)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	db.Exec(`
+		CREATE TABLE 'conversations' (
+			'conversation_id' INTEGER PRIMARY KEY,
+			'name' text NOT NULL
+		);
+	`)
+
+	db.Exec(`
+		CREATE table 'messages' (
+			'message_id' INTEGER PRIMARY KEY,
+			'value' text NOT NULL,
+			'sender' INTEGER NOT NULL,
+			'receiver' INTEGER NOT NULL,
+			'time' datetime NOT NULL DEFAULT GETDATE,
+			FOREIGN KEY ('sender') REFERENCES users ('user_id'),
+			FOREIGN KEY ('receiver') REFERENCES conversations ('conversation_id')
+		);
+	`)
+
+	db.Exec(`
+		CREATE table 'members' (
+			'member_id' INTEGER PRIMARY KEY,
+			'user_id' INTEGER NOT NULL,
+			'conversation_id' INTEGER NOT NULL,
+			FOREIGN KEY ('user_id') REFERENCES users ('user_id'),
+			FOREIGN KEY ('conversation_id') REFERENCES conversations ('conversation_id')
+		);
+	`)
+
+	db.Exec(`
+		CREATE TABLE 'cookies' (
+			'cookie_id' INTEGER PRIMARY KEY,
+			'user_id' INTEGER NOT NULL,
+			'value' text,
+			FOREIGN KEY ('user_id') REFERENCES users ('user_id')
+		);
+	`)
 
 	return Sqlite{
 		db,
 	}
 }
 
-func (s Sqlite) IsUserExists(login string) bool {
-	if err := s.QueryRow(`SELECT login FROM users WHERE login = $1`, login).Scan(); err == sql.ErrNoRows {
+// IsUserExists проверяет существует ли пользователь с именем username
+func (s Sqlite) IsUserExists(username string) bool {
+	if err := s.QueryRow(`SELECT username FROM users WHERE username = $1;`, username).Scan(); err == sql.ErrNoRows {
 		return false
 	}
+
 	return true
 }
 
-func (s Sqlite) RegisterUser(login, passowrd string) error {
-	// TODO: Проверить, есть ли пользователь с таким же именем
-	result, err := s.Exec(`insert into users (login, password) values ($1, $2)`, login, passowrd)
-	if err != nil {
-		return err
+// RegisterUser заносит новую запись в таблицу users
+func (s Sqlite) RegisterUser(username, passowrd string) error {
+	if s.IsUserExists(username) {
+		return fmt.Errorf("username %s already exists", username)
 	}
 
-	fmt.Println(result)
+	if _, err := s.Exec(`INSERT INTO users (username, password) VALUES ($1, $2)`, username, passowrd); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (s Sqlite) AuthUser(login, password string) bool {
+// AuthUser проверяет совпадает ли username и password из БД с тем,
+// что ввел пользователь на сайте
+func (s Sqlite) AuthUser(username, password string) bool {
 	var passwordFromDB string
-	if err := s.QueryRow(`SELECT password FROM users WHERE login = $1`, login).Scan(&passwordFromDB); err == sql.ErrNoRows {
+	if err := s.QueryRow(`SELECT password FROM users WHERE username = $1`, username).Scan(&passwordFromDB); err == sql.ErrNoRows {
 		return false
 	}
 
-	fmt.Println("equals:", password == passwordFromDB)
-
-	if password != passwordFromDB {
-		return false
-	}
-	return true
+	return password == passwordFromDB
 }
 
-func (s Sqlite) GetUserConversations(login string) []interface{} {
+// GetUserConversations возвращает список бесед пользователя
+func (s Sqlite) GetUserConversations(username string) []interface{} {
 
 	return nil
 }
