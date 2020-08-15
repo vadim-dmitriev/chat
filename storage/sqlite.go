@@ -120,3 +120,42 @@ func (s Sqlite) GetUserConversations(username string) []interface{} {
 
 	return nil
 }
+
+// GetUserSessionCookie возвращает значение сессионной куки пользователя
+func (s Sqlite) GetUserSessionCookie(username string) string {
+	var sessionCookie string
+	if err := s.QueryRow(`
+		SELECT value FROM cookies WHERE user_id = (
+			SELECT user_id FROM users WHERE username = $1
+		);
+	`, username).Scan(&sessionCookie); err == sql.ErrNoRows {
+		return ""
+	}
+
+	return sessionCookie
+}
+
+func (s Sqlite) GetUsernameByCookie(sessionCookie string) (string, error) {
+	var username string
+
+	if err := s.QueryRow(`
+		SELECT username FROM users WHERE user_id  = (
+			SELECT user_id FROM cookies WHERE value = $1
+		);
+	`, sessionCookie).Scan(&username); err == sql.ErrNoRows {
+		return "", fmt.Errorf("username not found")
+	}
+
+	return username, nil
+}
+
+// SetUserSessionCookie устанавливает новое значение сессионной куки пользователя
+func (s Sqlite) SetUserSessionCookie(newSessionCookieValue, username string) error {
+	if _, err := s.Exec(`UPDATE cookies SET value = $1 WHERE user_id = (
+		SELECT user_id FROM users WHERE username = $2
+	);`, newSessionCookieValue, username); err != nil {
+		return err
+	}
+
+	return nil
+}
