@@ -9,38 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func (a App) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Проверка на "Есть ли у клиента кука сессии?"
-		currentSessionCookie, err := r.Cookie("session")
-		if err == http.ErrNoCookie {
-			http.Redirect(w, r, "/signin", http.StatusUnauthorized)
-			return
-		}
-		username, err := a.Storage.GetUsernameByCookie(currentSessionCookie.Value)
-		if err != nil {
-			// w.WriteHeader(http.StatusUnauthorized)
-			http.Redirect(w, r, "/signin", http.StatusUnauthorized)
-			return
-		}
-
-		newSessionCookie, _ := uuid.NewRandom()
-		http.SetCookie(w, &http.Cookie{
-			Name:  "session",
-			Value: newSessionCookie.String(),
-			Path:  "/",
-		})
-
-		if err := a.Storage.SetUserSessionCookie(newSessionCookie.String(), username); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		next(w, r)
-	}
-}
-
+// AuthHandler производит аутенификацию пользователя
 func (a App) AuthHandler(w http.ResponseWriter, r *http.Request) {
 	var requestBody = make(map[string]string)
 	defer r.Body.Close()
@@ -73,6 +42,7 @@ func (a App) AuthHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
+// RegisterHandler производит регистрацию нового пользователя
 func (a App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	var requestBody = make(map[string]string)
 	defer r.Body.Close()
@@ -91,6 +61,7 @@ func (a App) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// WebSocketHandler производит переход с http на websocket (upgrade соединения)
 func (a App) WebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	upgrager := websocket.Upgrader{}
 	conn, err := upgrager.Upgrade(w, r, nil)

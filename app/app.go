@@ -7,16 +7,19 @@ import (
 	"github.com/vadim-dmitriev/chat/storage"
 )
 
+// App - связующая структура приложения
 type App struct {
 	Storage storage.Storager
 	Users   map[string]*User
 }
 
+// User описывает пользователя
 type User struct {
 	username string
 	conn     *websocket.Conn
 }
 
+// ServeUser обслуживает соединение с пользователем
 func (a App) ServeUser(conn *websocket.Conn) {
 	// read function
 	go func() {
@@ -56,6 +59,7 @@ func read() {
 
 }
 
+// New - конструктор структуры App
 func New(s storage.Storager) App {
 	return App{
 		Storage: s,
