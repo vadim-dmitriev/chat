@@ -30,7 +30,7 @@ func (a App) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			Path:  "/",
 		})
 
-		if err := a.Storage.SetUserSessionCookie(newSessionCookie.String(), username); err != nil {
+		if err := a.Storage.UpdateUserSessionCookie(newSessionCookie.String(), username); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

@@ -2,15 +2,30 @@ package app
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gorilla/websocket"
 	"github.com/vadim-dmitriev/chat/storage"
+)
+
+var (
+	rpcNotFound = map[string]interface{}{
+		"action": "not found",
+	}
 )
 
 // App - связующая структура приложения
 type App struct {
 	Storage storage.Storager
 	Users   map[string]*User
+}
+
+// New - конструктор структуры App
+func New(s storage.Storager) App {
+	return App{
+		Storage: s,
+		Users:   make(map[string]*User),
+	}
 }
 
 // User описывает пользователя
@@ -21,48 +36,25 @@ type User struct {
 
 // ServeUser обслуживает соединение с пользователем
 func (a App) ServeUser(conn *websocket.Conn) {
-	// read function
-	go func() {
-		request := make(map[string]interface{})
-		response := make(map[string]interface{})
+	request := make(map[string]interface{})
 
-		for {
-			if err := conn.ReadJSON(&request); err != nil {
-				fmt.Println(err)
-				break
-			}
-			switch request["action"] {
-			case "searchUser":
-				fmt.Println(request["action"])
-
-				response["action"] = "newConversationWith"
-				response["username"] = request["username"]
-
-				if a.Storage.IsUserExists(request["username"].(string)) {
-					response["isUserExists"] = true
-				} else {
-					response["isUserExists"] = false
-				}
-				conn.WriteJSON(response)
-
-			case "sendMessage":
-				fmt.Println(request["action"], request)
-			}
+	for {
+		if err := conn.ReadJSON(&request); err != nil {
+			fmt.Println(err)
+			break
 		}
-	}()
 
-	// write function
-	// TODO
-}
+		rpc := request["action"].(string)
+		handler, ok := wsHandlers[rpc]
+		if !ok {
+			log.Println("not found")
+			conn.WriteJSON(rpcNotFound)
+			continue
+		}
+		log.Println(request["action"])
 
-func read() {
-
-}
-
-// New - конструктор структуры App
-func New(s storage.Storager) App {
-	return App{
-		Storage: s,
-		Users:   make(map[string]*User),
+		conn.WriteJSON(
+			handler(request, a.Storage),
+		)
 	}
 }

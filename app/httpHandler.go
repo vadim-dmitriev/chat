@@ -34,7 +34,7 @@ func (a App) AuthHandler(w http.ResponseWriter, r *http.Request) {
 		Value: newSessionCookie.String(),
 		Path:  "/",
 	})
-	if err := a.Storage.SetUserSessionCookie(newSessionCookie.String(), requestBody["username"]); err != nil {
+	if err := a.Storage.UpdateUserSessionCookie(newSessionCookie.String(), requestBody["username"]); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

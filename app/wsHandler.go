@@ -1,30 +1,28 @@
 package app
 
 import (
-	"fmt"
-
-	"github.com/gorilla/websocket"
+	"github.com/vadim-dmitriev/chat/storage"
 )
 
 // WSHandler тип websocket обработчика (хэндлера)
-type WSHandler func(*websocket.Conn)
+type WSHandler func(map[string]interface{}, storage.Storager) map[string]interface{}
 
 var (
 	wsHandlers = map[string]WSHandler{
-		"searchUser": searUser(),
+		"searchUser": searchUserWSHandler,
 	}
 )
 
-func (a App) searchUser(conn *websocket.Conn) {
-	fmt.Println(request["action"])
+func searchUserWSHandler(request map[string]interface{}, s storage.Storager) map[string]interface{} {
+	var response = make(map[string]interface{}, 3)
+	response["action"] = "searchUser"
+	response["isUserExists"] = false
 
-	response["action"] = "newConversationWith"
-	response["username"] = request["username"]
-
-	if a.Storage.IsUserExists(request["username"].(string)) {
+	username := request["username"].(string)
+	if s.IsUserExists(username) {
 		response["isUserExists"] = true
-	} else {
-		response["isUserExists"] = false
+		response["newConversationWith"] = username
 	}
-	conn.WriteJSON(response)
+
+	return response
 }

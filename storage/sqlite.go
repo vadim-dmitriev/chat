@@ -82,7 +82,7 @@ func (s Sqlite) IsUserExists(username string) bool {
 	return true
 }
 
-// RegisterUser заносит новую запись в таблицу users
+// RegisterUser заносит новую запись в таблицу users и таблицу cookies
 func (s Sqlite) RegisterUser(username, password string) error {
 	if s.IsUserExists(username) {
 		return fmt.Errorf("username %s already exists", username)
@@ -93,7 +93,13 @@ func (s Sqlite) RegisterUser(username, password string) error {
 		return err
 	}
 
-	if _, err := s.Exec(`INSERT INTO users (username, password) VALUES ($1, $2)`, username, string(fingerprint)); err != nil {
+	res, err := s.Exec(`INSERT INTO users (username, password) VALUES ($1, $2)`, username, string(fingerprint))
+	if err != nil {
+		return err
+	}
+	newUserPrimaryKey, err := res.LastInsertId()
+
+	if _, err := s.Exec(`INSERT INTO cookies (user_id) VALUES ($1)`, newUserPrimaryKey); err != nil {
 		return err
 	}
 
@@ -149,8 +155,8 @@ func (s Sqlite) GetUsernameByCookie(sessionCookie string) (string, error) {
 	return username, nil
 }
 
-// SetUserSessionCookie устанавливает новое значение сессионной куки пользователя
-func (s Sqlite) SetUserSessionCookie(newSessionCookieValue, username string) error {
+// UpdateUserSessionCookie устанавливает новое значение сессионной куки пользователя
+func (s Sqlite) UpdateUserSessionCookie(newSessionCookieValue, username string) error {
 	if _, err := s.Exec(`UPDATE cookies SET value = $1 WHERE user_id = (
 		SELECT user_id FROM users WHERE username = $2
 	);`, newSessionCookieValue, username); err != nil {

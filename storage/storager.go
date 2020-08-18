@@ -5,7 +5,6 @@ type Storager interface {
 	AuthUser(string, string) bool
 	GetUserConversations(string) []interface{}
 	IsUserExists(string) bool
-	GetUserSessionCookie(string) string
-	SetUserSessionCookie(string, string) error
+	UpdateUserSessionCookie(string, string) error
 	GetUsernameByCookie(string) (string, error)
 }
