@@ -5,9 +5,8 @@ Vue.component("conversation", {
 	props: ["index", "conversation", "isChoosed"],
 	template: `
 		<div class="conversation" v-bind:class="{ conversationClicked: this.isChoosed }">
-			<strong>{{ conversation.name }}</strong>
+			<strong>{{ conversation }}</strong>
 			<br/><br/>
-			{{ conversation.lastMessage }}
 		</div>`,
 	methods: {
 		select: function() {
@@ -138,26 +137,31 @@ Vue.component("chat", {
 var app = new Vue({
 	el: '#app',
 	data: {
-		conversations: [
-			{name: "Витя", lastMessage: "Добрый день, ок"},
-			{name: "Сережа", lastMessage: "Привет! Во сколько ты приедешь?"},
-			{name: "Веррроника", lastMessage: "kek"},
-			{name: "Павлик", lastMessage: "Отвечаю на вопросы которые задает сегодня..."},
-		],
+		conversations: [],
 		currentConversation: "",
 		ws: null,
 	},
 
 	created: function() {
-		const conversations = this.conversations
+		// const conversations = this.conversations
 
 		this.ws = new WebSocket("ws://"+window.location.host+"/api/v1/ws");
+
+		var getConversaions = this.getConversaions
+		this.ws.onopen = function(event) {
+			getConversaions();
+		}
 
 		this.ws.onmessage = function(event) {
 			message = JSON.parse(event.data)
 			console.log(message);
 
 			switch (message.action) {
+			case "conversations":
+				this.conversations = message.conversations;
+				// alert(message.conversations);
+				break;
+
 			case "searchUser":
 				if (message.isUserExists) {
 					conversations.push({
@@ -173,6 +177,14 @@ var app = new Vue({
 		this.ws.close()
 	},
 	methods: {
+		getConversaions: function () {
+			this.ws.send(
+				JSON.stringify({
+					action: "getConversations"
+				})
+			);
+
+		},
 		searchUser: function(username) {
 			this.ws.send(
 				JSON.stringify({

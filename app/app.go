@@ -37,12 +37,20 @@ type User struct {
 // ServeUser обслуживает соединение с пользователем
 func (a App) ServeUser(conn *websocket.Conn) {
 	request := make(map[string]interface{})
+	var username string
+	for usn, user := range a.Users {
+		if conn == user.conn {
+			username = usn
+			break
+		}
+	}
 
 	for {
 		if err := conn.ReadJSON(&request); err != nil {
 			fmt.Println(err)
 			break
 		}
+		request["username"] = username
 
 		rpc := request["action"].(string)
 		handler, ok := wsHandlers[rpc]

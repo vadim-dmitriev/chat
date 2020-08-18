@@ -122,9 +122,25 @@ func (s Sqlite) AuthUser(username, password string) bool {
 }
 
 // GetUserConversations возвращает список бесед пользователя
-func (s Sqlite) GetUserConversations(username string) []interface{} {
+func (s Sqlite) GetUserConversations(username string) ([]string, error) {
+	rows, err := s.Query(`
+		SELECT name FROM members JOIN conversations USING (conversation_id) WHERE user_id = (
+			SELECT user_id FROM users where username = $1
+		); 
+	`, username)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	return nil
+	var conversations = make([]string, 0)
+	var conversationName string
+	for rows.Next() {
+		rows.Scan(&conversationName)
+		conversations = append(conversations, conversationName)
+	}
+
+	return conversations, nil
 }
 
 // GetUserSessionCookie возвращает значение сессионной куки пользователя
