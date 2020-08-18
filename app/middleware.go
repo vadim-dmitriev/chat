@@ -7,9 +7,9 @@ import (
 )
 
 // AuthMiddleware проверяет авторизован ли пользователь
-func (a App) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func (a App) AuthMiddleware(next http.Handler) http.Handler {
 
-	return func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// Проверка на "Есть ли у клиента кука сессии?"
 		currentSessionCookie, err := r.Cookie("session")
@@ -35,7 +35,7 @@ func (a App) AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		next(w, r)
-	}
+		next.ServeHTTP(w, r)
+	})
 
 }

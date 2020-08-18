@@ -158,10 +158,10 @@ var app = new Vue({
 			console.log(message);
 
 			switch (message.action) {
-			case "newConversationWith":
+			case "searchUser":
 				if (message.isUserExists) {
 					conversations.push({
-						name: message.username,
+						name: message.newConversationWith,
 					});
 				}
 				break;

@@ -15,31 +15,21 @@ func main() {
 	s := storage.NewSqlite()
 	app := app.New(s)
 
+	// API Paths
 	http.HandleFunc("/api/v1/auth", app.AuthHandler)
 	http.HandleFunc("/api/v1/register", app.RegisterHandler)
 	http.HandleFunc("/api/v1/ws", app.WebSocketHandler)
 
+	// Static files
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
-	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "static/html/signin.html")
-	})
-	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "static/html/signup.html")
-	})
-	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	_, err := r.Cookie("username")
-	// 	if err == http.ErrNoCookie {
-	// 		fmt.Println("NO COOKIE")
-	// 		http.Redirect(w, r, "/signin", http.StatusTemporaryRedirect)
-	// 		return
-	// 	}
 
-	// 	http.ServeFile(w, r, "static/html/chat.html")
-	// })
-	http.HandleFunc("/", app.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "static/html/chat.html")
-	}))
+	// Pages
+	http.Handle("/signin", page("static/html/signin.html"))
+	http.Handle("/signup", page("static/html/signip.html"))
+	http.Handle("/", app.AuthMiddleware(
+		page("static/html/chat.html"),
+	))
 
 	exitChan := make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt)
