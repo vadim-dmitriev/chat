@@ -2,16 +2,19 @@ Vue.component("conversation", {
 	data: function () {
 		return {}
 	},
-	props: ["index", "conversation", "isChoosed"],
+	props: ["index", "conversation", "isChoosed", "name"],
 	template: `
 		<div class="conversation" v-bind:class="{ conversationClicked: this.isChoosed }">
-			<strong>{{ conversation.name }}</strong>
+			<strong>{{ name }}</strong>
 			<br/><br/>
+			{{ conversation.last_message.value }}
+			<br/><br/>
+			{{ conversation.last_message.time }}
 		</div>`,
 	methods: {
 		select: function() {
-			this.isChoosed = true
-			this.conversation.lastMessage = "asd"
+			// this.isChoosed = true
+			// this.conversation.lastMessage.value = "asd"
 		},
 	}
 })
@@ -77,30 +80,30 @@ Vue.component("user-panel", {
 Vue.component("conversations", {
 	data: function () {
 		return {
-			isChoosed: new Array(this.conversations.length).fill(false),
-			choosedConversation: -1
+			// isChoosed: new Array(this.conversations.length).fill(false),
+			// choosedConversation: -1
 		}
 	},
 	props: ["conversations"],
 	template: `
 		<div class="conversations">
-			<div v-for="(conversation, index) in conversations">
-				<conversation v-bind:isChoosed="isChoosed[index]" v-bind:conversation="conversation" v-bind:index="index" v-on:click.native="change(index)"/>
+			<div v-for="conversation in Object.keys(conversations)">
+				<conversation :name="conversation" :conversation="conversations[conversation]"  v-on:click.native="change(index)"/>
 			</div>
 		</div>`,
 	methods: {
 		change: function(index) {
-			if (this.choosedConversation != index) {
-				this.isChoosed = new Array(this.conversations.length).fill(false);
-				this.isChoosed[index] = true;
-				this.$emit("change-conversation", this.conversations[index].name);
-			}
+			// if (this.choosedConversation != index) {
+			// 	this.isChoosed = new Array(this.conversations.length).fill(false);
+			// 	this.isChoosed[index] = true;
+			// 	this.$emit("change-conversation", this.conversations[index].name);
+			// }
 		}
 	},
 	watch: {
-		conversations: function() {
-			this.change(this.conversations.length-1)
-		}
+		// conversations: function() {
+		// 	this.change(this.conversations.length-1)
+		// }
 	}
 });
 
