@@ -50,7 +50,7 @@ func (a App) ServeUser(conn *websocket.Conn) {
 			fmt.Println(err)
 			break
 		}
-		request["username"] = username
+		request["messageFrom"] = username
 
 		rpc := request["action"].(string)
 		handler, ok := wsHandlers[rpc]

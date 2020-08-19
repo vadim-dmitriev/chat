@@ -5,7 +5,7 @@ Vue.component("conversation", {
 	props: ["index", "conversation", "isChoosed"],
 	template: `
 		<div class="conversation" v-bind:class="{ conversationClicked: this.isChoosed }">
-			<strong>{{ conversation }}</strong>
+			<strong>{{ conversation.name }}</strong>
 			<br/><br/>
 		</div>`,
 	methods: {
@@ -137,19 +137,18 @@ Vue.component("chat", {
 var app = new Vue({
 	el: '#app',
 	data: {
-		conversations: [],
+		conversations: {},
 		currentConversation: "",
 		ws: null,
 	},
 
 	created: function() {
-		// const conversations = this.conversations
+		t = this
 
 		this.ws = new WebSocket("ws://"+window.location.host+"/api/v1/ws");
 
-		var getConversaions = this.getConversaions
 		this.ws.onopen = function(event) {
-			getConversaions();
+			t.getConversaions();
 		}
 
 		this.ws.onmessage = function(event) {
@@ -158,16 +157,21 @@ var app = new Vue({
 
 			switch (message.action) {
 			case "conversations":
-				this.conversations = message.conversations;
-				// alert(message.conversations);
+				t.conversations = message.conversations;
+				console.log(t.conversations)
+
 				break;
 
 			case "searchUser":
 				if (message.isUserExists) {
-					conversations.push({
+					t.conversations.push({
 						name: message.newConversationWith,
 					});
 				}
+				break;
+
+			case "newMessage":
+				alert(message.value);
 				break;
 			}
 		}
@@ -203,7 +207,7 @@ var app = new Vue({
 			);
 		},
 		changeConversation: function(currentChoosedConversation) {
-			this.choosedConversation = currentChoosedConversation;
+			this.currentConversation = currentChoosedConversation;
 		}
 	}
 });

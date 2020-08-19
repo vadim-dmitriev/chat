@@ -14,12 +14,10 @@
                 </user-panel>
 
                 <conversations :conversations="conversations"
-                                v-on:change-conversation="changeConversation"
-                />
+                                v-on:change-conversation="changeConversation">
+                </conversations>
 
-                <chat :messages="messages"
-                       v-on:send-message="sendMessage"
-                />
+                <chat v-on:send-message="sendMessage" />
 
             </div>
         </div>

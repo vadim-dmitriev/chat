@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -33,7 +34,8 @@ func NewSqlite() Storager {
 	db.Exec(`
 		CREATE TABLE 'conversations' (
 			'conversation_id' INTEGER PRIMARY KEY,
-			'name' text NOT NULL
+			'name' text,
+			'is_dialog' BOOL
 		);
 	`)
 
@@ -41,11 +43,11 @@ func NewSqlite() Storager {
 		CREATE table 'messages' (
 			'message_id' INTEGER PRIMARY KEY,
 			'value' text NOT NULL,
-			'sender' INTEGER NOT NULL,
-			'receiver' INTEGER NOT NULL,
-			'time' datetime NOT NULL DEFAULT GETDATE,
-			FOREIGN KEY ('sender') REFERENCES users ('user_id'),
-			FOREIGN KEY ('receiver') REFERENCES conversations ('conversation_id')
+			'user_id' INTEGER NOT NULL,
+			'conversation_id' INTEGER NOT NULL,
+			'time' datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY ('user_id') REFERENCES users ('user_id'),
+			FOREIGN KEY ('conversation_id') REFERENCES conversations ('conversation_id')
 		);
 	`)
 
@@ -121,10 +123,25 @@ func (s Sqlite) AuthUser(username, password string) bool {
 	return true
 }
 
-// GetUserConversations возвращает список бесед пользователя
-func (s Sqlite) GetUserConversations(username string) ([]string, error) {
+/* GetUserConversations возвращает список бесед пользователя
+Структура ответа:
+	{
+		"{conversation_name}": {
+			"is_dialog": boolean,
+			"last_message": {
+				"value": string({message_value}),
+				"sender": string({username}),
+				"time": string({datetime})
+			}
+		},
+		"{conversation_name}": {
+			...
+		}
+	}
+*/
+func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, error) {
 	rows, err := s.Query(`
-		SELECT name FROM members JOIN conversations USING (conversation_id) WHERE user_id = (
+		SELECT conversation_id, name, is_dialog FROM members JOIN conversations USING (conversation_id) WHERE user_id = (
 			SELECT user_id FROM users where username = $1
 		); 
 	`, username)
@@ -133,11 +150,39 @@ func (s Sqlite) GetUserConversations(username string) ([]string, error) {
 	}
 	defer rows.Close()
 
-	var conversations = make([]string, 0)
+	var conversations = make(map[string]interface{})
 	var conversationName string
+	var conversationID int
+	var isDialog bool
 	for rows.Next() {
-		rows.Scan(&conversationName)
-		conversations = append(conversations, conversationName)
+		rows.Scan(&conversationID, &conversationName, &isDialog)
+		conversation := make(map[string]interface{})
+		conversation["is_dialog"] = isDialog
+
+		var value, time string
+		var userID int
+		if err := s.QueryRow(`
+			SELECT value, user_id, time FROM  conversations JOIN messages USING (conversation_id)
+			WHERE conversation_id = $1
+			ORDER BY time DESC
+			LIMIT 1
+		`, conversationID).Scan(&value, &userID, &time); err == sql.ErrNoRows {
+			conversation["last_message"] = nil
+			conversations[conversationName] = conversation
+			continue
+		}
+		lastMessage := make(map[string]interface{})
+		lastMessage["value"] = value
+		lastMessage["sender"] = userID
+		lastMessage["time"] = time
+
+		conversation["last_message"] = lastMessage
+
+		if conversationName == "" {
+			conversationName = strconv.Itoa(conversationID)
+		}
+		conversations[conversationName] = conversation
+
 	}
 
 	return conversations, nil
@@ -157,6 +202,7 @@ func (s Sqlite) GetUserSessionCookie(username string) string {
 	return sessionCookie
 }
 
+// GetUsernameByCookie возвращает имя пользователя (username) исходя из куки
 func (s Sqlite) GetUsernameByCookie(sessionCookie string) (string, error) {
 	var username string
 
