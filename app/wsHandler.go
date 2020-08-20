@@ -45,14 +45,6 @@ func getConversations(request map[string]interface{}, s storage.Storager) map[st
 		response["error"] = err.Error()
 		return response
 	}
-
-	// convResponse := make([]map[string]interface{}, len(conversations), len(conversations))
-	// for i, convName := range conversations {
-	// 	conversation := make(map[string]interface{})
-	// 	conversation["name"] = convName
-	// 	convResponse[i] = conversation
-	// }
-	fmt.Println(conversations)
 	response["conversations"] = conversations
 
 	return response
@@ -60,6 +52,13 @@ func getConversations(request map[string]interface{}, s storage.Storager) map[st
 
 func sendMessage(request map[string]interface{}, s storage.Storager) map[string]interface{} {
 	var response = make(map[string]interface{})
+	response["success"] = true
 	fmt.Println(request)
+	// map[action:sendMessage conversationName:1 message:1 messageFrom:vadim]
+	err := s.SetMessage(request["message"].(string), request["messageFrom"].(string), request["conversationName"].(int))
+	if err != nil {
+		response["success"] = false
+	}
+
 	return response
 }

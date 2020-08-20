@@ -3,7 +3,6 @@ package storage
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -35,7 +34,7 @@ func NewSqlite() Storager {
 		CREATE TABLE 'conversations' (
 			'conversation_id' INTEGER PRIMARY KEY,
 			'name' text,
-			'is_dialog' BOOL
+			'is_dialog' INTEGER NOT NULL
 		);
 	`)
 
@@ -151,11 +150,13 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 	defer rows.Close()
 
 	var conversations = make(map[string]interface{})
-	var conversationName string
+	var conversationName interface{}
 	var conversationID int
-	var isDialog bool
+	var isDialog int
 	for rows.Next() {
-		rows.Scan(&conversationID, &conversationName, &isDialog)
+		if err := rows.Scan(&conversationID, &conversationName, &isDialog); err != nil {
+			fmt.Println(err)
+		}
 		conversation := make(map[string]interface{})
 		conversation["is_dialog"] = isDialog
 
@@ -168,7 +169,8 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 			LIMIT 1
 		`, conversationID).Scan(&value, &userID, &time); err == sql.ErrNoRows {
 			conversation["last_message"] = nil
-			conversations[conversationName] = conversation
+			conversationName = "conversationName"
+			conversations["conversationName"] = conversation
 			continue
 		}
 		lastMessage := make(map[string]interface{})
@@ -178,13 +180,16 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 
 		conversation["last_message"] = lastMessage
 
-		if conversationName == "" {
-			conversationName = strconv.Itoa(conversationID)
+		if isDialog == 1 {
+			s.DB.QueryRow(`
+				SELECT username FROM members JOIN users USING (user_id) WHERE conversation_id = $1 AND user_id != 
+					(SELECT user_id FROM users WHERE username = $2)
+			`, conversationID, username).Scan(&conversationName)
 		}
-		conversations[conversationName] = conversation
+		conversations[conversationName.(string)] = conversation
 
 	}
-
+	fmt.Println(conversations)
 	return conversations, nil
 }
 
@@ -226,4 +231,14 @@ func (s Sqlite) UpdateUserSessionCookie(newSessionCookieValue, username string) 
 	}
 
 	return nil
+}
+
+func (s Sqlite) SetMessage(value, senderName string, conversationID int) error {
+	_, err := s.DB.Exec(`
+		INSERT INTO
+		messages(value, user_id, conversation_id)
+		VALUES ($1, (SELECT user_id FROM users WHERE username = $2), $3);
+	`, value, senderName, conversationID)
+
+	return err
 }

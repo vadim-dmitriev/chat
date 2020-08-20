@@ -1,8 +1,10 @@
 Vue.component("conversation", {
 	data: function () {
-		return {}
+		return {
+			isChoosed: false
+		}
 	},
-	props: ["index", "conversation", "isChoosed", "name"],
+	props: ["conversation", "choosedConversation", "name"],
 	template: `
 		<div class="conversation" v-bind:class="{ conversationClicked: this.isChoosed }">
 			<strong>{{ name }}</strong>
@@ -11,11 +13,11 @@ Vue.component("conversation", {
 			<br/><br/>
 			{{ conversation.last_message.time }}
 		</div>`,
-	methods: {
-		select: function() {
-			// this.isChoosed = true
-			// this.conversation.lastMessage.value = "asd"
-		},
+	methods: {},
+	watch: {
+		isChoosed: function() {
+			return this.name === choosedConversation
+		}
 	}
 })
 
@@ -80,24 +82,24 @@ Vue.component("user-panel", {
 Vue.component("conversations", {
 	data: function () {
 		return {
-			// isChoosed: new Array(this.conversations.length).fill(false),
-			// choosedConversation: -1
+			choosedConversation: ""
 		}
 	},
 	props: ["conversations"],
 	template: `
 		<div class="conversations">
 			<div v-for="conversation in Object.keys(conversations)">
-				<conversation :name="conversation" :conversation="conversations[conversation]"  v-on:click.native="change(index)"/>
+				<conversation :name="conversation" :conversation="conversations[conversation]"  v-on:click.native="change(conversation)"
+							  :choosedConversation="choosedConversation"
+				/>
 			</div>
 		</div>`,
 	methods: {
-		change: function(index) {
-			// if (this.choosedConversation != index) {
-			// 	this.isChoosed = new Array(this.conversations.length).fill(false);
-			// 	this.isChoosed[index] = true;
-			// 	this.$emit("change-conversation", this.conversations[index].name);
-			// }
+		change: function(convName) {
+			if (this.choosedConversation !== convName) {
+				this.choosedConversation = convName;
+				this.$emit("change-conversation", convName);
+			}
 		}
 	},
 	watch: {
@@ -111,11 +113,12 @@ Vue.component("chat", {
 	data: function() {
 		return {
 			currentMessage: "",
+			isActive: false
 		}
 	},
-	props: ["messages"],
+	props: ["messages", "conversation"],
 	template: `
-		<div class="chat">
+		<div class="chat" v-show="isActive">
 			<ul>
 				<li v-for="message in messages">
 					{{ message }}
@@ -134,6 +137,15 @@ Vue.component("chat", {
 				this.currentMessage = ""
 			}
 		},
+	},
+	watch: {
+		conversation: function() {
+			if (this.conversation !== "") {
+				this.isActive = true
+			} else {
+				this.isActive = false
+			}
+		}
 	}
 });
 
@@ -142,6 +154,7 @@ var app = new Vue({
 	data: {
 		conversations: {},
 		currentConversation: "",
+		messages: [],
 		ws: null,
 	},
 
