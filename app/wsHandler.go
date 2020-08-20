@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-
 	"github.com/vadim-dmitriev/chat/storage"
 )
 
@@ -53,9 +51,8 @@ func getConversations(request map[string]interface{}, s storage.Storager) map[st
 func sendMessage(request map[string]interface{}, s storage.Storager) map[string]interface{} {
 	var response = make(map[string]interface{})
 	response["success"] = true
-	fmt.Println(request)
 	// map[action:sendMessage conversationName:1 message:1 messageFrom:vadim]
-	err := s.SetMessage(request["message"].(string), request["messageFrom"].(string), request["conversationName"].(int))
+	err := s.SetMessage(request["message"].(string), request["messageFrom"].(string), request["conversationName"].(string))
 	if err != nil {
 		response["success"] = false
 	}

@@ -7,5 +7,5 @@ type Storager interface {
 	IsUserExists(string) bool
 	UpdateUserSessionCookie(string, string) error
 	GetUsernameByCookie(string) (string, error)
-	SetMessage(string, string, int) error
+	SetMessage(string, string, string) error
 }

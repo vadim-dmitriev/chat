@@ -233,12 +233,17 @@ func (s Sqlite) UpdateUserSessionCookie(newSessionCookieValue, username string) 
 	return nil
 }
 
-func (s Sqlite) SetMessage(value, senderName string, conversationID int) error {
+func (s Sqlite) SetMessage(value, senderName string, conversationID string) error {
 	_, err := s.DB.Exec(`
 		INSERT INTO
 		messages(value, user_id, conversation_id)
-		VALUES ($1, (SELECT user_id FROM users WHERE username = $2), $3);
+		VALUES (
+				$1,
+			   (SELECT user_id FROM users WHERE username = $2),
+			   (SELECT conversation_id FROM conversations JOIN members USING(conversation_id) WHERE user_id = (SELECT user_id FROM users WHERE username == $2))
+			   );
 	`, value, senderName, conversationID)
+	fmt.Println(err)
 
 	return err
 }
