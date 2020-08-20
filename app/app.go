@@ -37,10 +37,10 @@ type User struct {
 // ServeUser обслуживает соединение с пользователем
 func (a App) ServeUser(conn *websocket.Conn) {
 	request := make(map[string]interface{})
-	var username string
+	var thisUsername string
 	for usn, user := range a.Users {
 		if conn == user.conn {
-			username = usn
+			thisUsername = usn
 			break
 		}
 	}
@@ -50,8 +50,25 @@ func (a App) ServeUser(conn *websocket.Conn) {
 			fmt.Println(err)
 			break
 		}
-		request["messageFrom"] = username
+		request["messageFrom"] = thisUsername
 
+		if request["action"].(string) == "sendMessage" {
+			for username, user := range a.Users {
+				if username == request["conversationName"] {
+					user.conn.WriteJSON(map[string]interface{}{
+						"action": "newMessage",
+						"value":  request["value"],
+					})
+					fmt.Println("sended to", username)
+					err := a.Storage.SetMessage(request["message"].(string), request["messageFrom"].(string), request["conversationName"].(string))
+					if err != nil {
+						panic(err)
+					}
+					break
+				}
+			}
+			continue
+		}
 		rpc := request["action"].(string)
 		handler, ok := wsHandlers[rpc]
 		if !ok {

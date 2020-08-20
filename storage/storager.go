@@ -8,4 +8,5 @@ type Storager interface {
 	UpdateUserSessionCookie(string, string) error
 	GetUsernameByCookie(string) (string, error)
 	SetMessage(string, string, string) error
+	SetDialog(string, string) error
 }

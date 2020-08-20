@@ -30,6 +30,10 @@ func searchUserWSHandler(request map[string]interface{}, s storage.Storager) map
 		response["newConversationWith"] = username
 	}
 
+	if err := s.SetDialog(username, request["messageFrom"].(string)); err != nil {
+		panic(err)
+	}
+
 	return response
 }
 

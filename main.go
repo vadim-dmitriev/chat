@@ -26,7 +26,7 @@ func main() {
 
 	// Pages
 	http.Handle("/signin", page("static/html/signin.html"))
-	http.Handle("/signup", page("static/html/signip.html"))
+	http.Handle("/signup", page("static/html/signup.html"))
 	http.Handle("/", app.AuthMiddleware(
 		page("static/html/chat.html"),
 	))

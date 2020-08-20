@@ -160,17 +160,28 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 		conversation := make(map[string]interface{})
 		conversation["is_dialog"] = isDialog
 
+		if isDialog == 1 {
+			s.DB.QueryRow(`
+				SELECT username FROM members JOIN users USING (user_id) WHERE conversation_id = $1 AND user_id != 
+					(SELECT user_id FROM users WHERE username = $2)
+			`, conversationID, username).Scan(&conversationName)
+		}
+		conversations[conversationName.(string)] = conversation
+
 		var value, time string
 		var userID int
 		if err := s.QueryRow(`
-			SELECT value, user_id, time FROM  conversations JOIN messages USING (conversation_id)
+		SELECT value, user_id, time FROM  conversations JOIN messages USING (conversation_id)
 			WHERE conversation_id = $1
 			ORDER BY time DESC
 			LIMIT 1
 		`, conversationID).Scan(&value, &userID, &time); err == sql.ErrNoRows {
-			conversation["last_message"] = nil
-			conversationName = "conversationName"
-			conversations["conversationName"] = conversation
+			conversation["last_message"] = map[string]interface{}{
+				"value":  "Нет сообщений...",
+				"sender": "",
+				"time":   "",
+			}
+			conversations[conversationName.(string)] = conversation
 			continue
 		}
 		lastMessage := make(map[string]interface{})
@@ -180,16 +191,8 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 
 		conversation["last_message"] = lastMessage
 
-		if isDialog == 1 {
-			s.DB.QueryRow(`
-				SELECT username FROM members JOIN users USING (user_id) WHERE conversation_id = $1 AND user_id != 
-					(SELECT user_id FROM users WHERE username = $2)
-			`, conversationID, username).Scan(&conversationName)
-		}
-		conversations[conversationName.(string)] = conversation
-
 	}
-	fmt.Println(conversations)
+
 	return conversations, nil
 }
 
@@ -243,7 +246,39 @@ func (s Sqlite) SetMessage(value, senderName string, conversationID string) erro
 			   (SELECT conversation_id FROM conversations JOIN members USING(conversation_id) WHERE user_id = (SELECT user_id FROM users WHERE username == $2))
 			   );
 	`, value, senderName, conversationID)
-	fmt.Println(err)
 
 	return err
+}
+
+func (s Sqlite) SetDialog(memberOne, memberTwo string) error {
+	result, err := s.Exec(`
+		INSERT INTO conversations(name, is_dialog) VALUES($1, $2)
+	`, nil, 1)
+	if err != nil {
+		return err
+	}
+	newDialogFK, err := result.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	if _, err := s.Exec(`
+		INSERT INTO members(user_id, conversation_id) VALUES(
+			(SELECT user_id FROM users WHERE username = $1),
+			$2
+		);
+	`, memberOne, newDialogFK); err != nil {
+		return err
+	}
+
+	if _, err := s.Exec(`
+		INSERT INTO members(user_id, conversation_id) VALUES(
+			(SELECT user_id FROM users WHERE username = $1),
+			$2
+		);
+	`, memberTwo, newDialogFK); err != nil {
+		return err
+	}
+
+	return nil
 }

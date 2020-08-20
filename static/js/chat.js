@@ -1,7 +1,7 @@
 Vue.component("conversation", {
 	data: function () {
 		return {
-			isChoosed: false
+			// isChoosed: true
 		}
 	},
 	props: ["conversation", "choosedConversation", "name"],
@@ -14,9 +14,9 @@ Vue.component("conversation", {
 			{{ conversation.last_message.time }}
 		</div>`,
 	methods: {},
-	watch: {
+	computed: {
 		isChoosed: function() {
-			return this.name === choosedConversation
+			return this.name === this.choosedConversation
 		}
 	}
 })
@@ -102,11 +102,6 @@ Vue.component("conversations", {
 			}
 		}
 	},
-	watch: {
-		// conversations: function() {
-		// 	this.change(this.conversations.length-1)
-		// }
-	}
 });
 
 Vue.component("chat", {
@@ -163,26 +158,35 @@ var app = new Vue({
 
 		this.ws = new WebSocket("ws://"+window.location.host+"/api/v1/ws");
 
-		this.ws.onopen = function(event) {
+		this.ws.onopen = function() {
 			t.getConversaions();
 		}
 
 		this.ws.onmessage = function(event) {
 			message = JSON.parse(event.data)
-			console.log(message);
+			console.log("NEW MESSAGE FROM SERVER:", message);
 
 			switch (message.action) {
 			case "conversations":
 				t.conversations = message.conversations;
 				console.log(t.conversations)
-
 				break;
 
 			case "searchUser":
 				if (message.isUserExists) {
-					t.conversations.push({
-						name: message.newConversationWith,
-					});
+					// alert(message.newConversationWith)
+					// t.conversations[message.newConversationWith].is_dialog = true
+					// t.conversations[message.newConversationWith].last_message.value = "Нет сообщений..."
+
+					t.conversations[message.newConversationWith] = {
+						is_dialog: true,
+						last_message: {
+							value: "Нет сообщений...",
+							sender: "",
+							time: "",
+						}
+					}
+					console.log(t.conversations)
 				}
 				break;
 
