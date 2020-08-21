@@ -28,6 +28,8 @@ func searchUserWSHandler(request map[string]interface{}, s storage.Storager) map
 	if s.IsUserExists(username) {
 		response["isUserExists"] = true
 		response["newConversationWith"] = username
+	} else {
+		return response
 	}
 
 	if err := s.SetDialog(username, request["messageFrom"].(string)); err != nil {

@@ -53,17 +53,19 @@ func (a App) ServeUser(conn *websocket.Conn) {
 		request["messageFrom"] = thisUsername
 
 		if request["action"].(string) == "sendMessage" {
+			err := a.Storage.SetMessage(request["message"].(string), request["messageFrom"].(string), request["conversationName"].(string))
+			if err != nil {
+				panic(err)
+			}
 			for username, user := range a.Users {
 				if username == request["conversationName"] {
-					user.conn.WriteJSON(map[string]interface{}{
+					if err := user.conn.WriteJSON(map[string]interface{}{
 						"action": "newMessage",
 						"value":  request["value"],
-					})
-					fmt.Println("sended to", username)
-					err := a.Storage.SetMessage(request["message"].(string), request["messageFrom"].(string), request["conversationName"].(string))
-					if err != nil {
+					}); err != nil {
 						panic(err)
 					}
+					fmt.Println("sended to", username)
 					break
 				}
 			}

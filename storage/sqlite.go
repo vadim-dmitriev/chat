@@ -127,11 +127,13 @@ func (s Sqlite) AuthUser(username, password string) bool {
 	{
 		"{conversation_name}": {
 			"is_dialog": boolean,
-			"last_message": {
-				"value": string({message_value}),
-				"sender": string({username}),
-				"time": string({datetime})
-			}
+			"messages": [
+				{
+					"value": string({message_value}),
+					"sender": string({username}),
+					"time": string({datetime})
+				},
+			]
 		},
 		"{conversation_name}": {
 			...
@@ -155,7 +157,7 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 	var isDialog int
 	for rows.Next() {
 		if err := rows.Scan(&conversationID, &conversationName, &isDialog); err != nil {
-			fmt.Println(err)
+			return nil, err
 		}
 		conversation := make(map[string]interface{})
 		conversation["is_dialog"] = isDialog
@@ -166,30 +168,40 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 					(SELECT user_id FROM users WHERE username = $2)
 			`, conversationID, username).Scan(&conversationName)
 		}
-		conversations[conversationName.(string)] = conversation
 
-		var value, time string
-		var userID int
-		if err := s.QueryRow(`
-		SELECT value, user_id, time FROM  conversations JOIN messages USING (conversation_id)
+		messagesRows, err := s.Query(`
+			SELECT value, user_id, time FROM  conversations JOIN messages USING (conversation_id)
 			WHERE conversation_id = $1
 			ORDER BY time DESC
-			LIMIT 1
-		`, conversationID).Scan(&value, &userID, &time); err == sql.ErrNoRows {
-			conversation["last_message"] = map[string]interface{}{
-				"value":  "Нет сообщений...",
-				"sender": "",
-				"time":   "",
+			LIMIT 10
+		`, conversationID)
+		if err == sql.ErrNoRows {
+			conversation["messages"] = []map[string]interface{}{
+				{
+					"value":  "Нет сообщений...",
+					"sender": "",
+					"time":   "",
+				},
 			}
 			conversations[conversationName.(string)] = conversation
 			continue
 		}
-		lastMessage := make(map[string]interface{})
-		lastMessage["value"] = value
-		lastMessage["sender"] = userID
-		lastMessage["time"] = time
 
-		conversation["last_message"] = lastMessage
+		messages := make([]map[string]interface{}, 0)
+		var value, time string
+		var userID int
+		for messagesRows.Next() {
+			if err := messagesRows.Scan(&value, &userID, &time); err != nil {
+				return nil, err
+			}
+			messages = append(messages, map[string]interface{}{
+				"value":  value,
+				"sender": userID,
+				"time":   time,
+			})
+		}
+		conversation["messages"] = messages
+		conversations[conversationName.(string)] = conversation
 
 	}
 

@@ -9,15 +9,22 @@ Vue.component("conversation", {
 		<div class="conversation" v-bind:class="{ conversationClicked: this.isChoosed }">
 			<strong>{{ name }}</strong>
 			<br/><br/>
-			{{ conversation.last_message.value }}
+			{{ lastMessage }}
 			<br/><br/>
-			{{ conversation.last_message.time }}
+			{{ lastMessageTime }}
 		</div>`,
 	methods: {},
 	computed: {
 		isChoosed: function() {
 			return this.name === this.choosedConversation
+		},
+		lastMessage: function() {
+			return this.conversation.messages[0].value
+		},
+		lastMessageTime: function() {
+			return this.conversation.messages[0].time
 		}
+
 	}
 })
 
@@ -108,48 +115,50 @@ Vue.component("chat", {
 	data: function() {
 		return {
 			currentMessage: "",
-			isActive: false
 		}
 	},
-	props: ["messages", "conversation"],
+	props: ["conversation"],
 	template: `
 		<div class="chat" v-show="isActive">
 			<ul>
-				<li v-for="message in messages">
-					{{ message }}
+				<li v-for="message in messages.slice().reverse()">
+					{{ message.value }} - {{   message.time }}
 				</li>
 			</ul>
 			<div>
 				<input v-model="currentMessage" v-on:keyup.enter="sendMessage"/>
 				<button v-on:click="sendMessage" value="Send">Send</button>
 			</div>
-		</div>`,
+		</div>
+	`,
 	methods: {
 		sendMessage: function() {
 			if (this.currentMessage !== "") {
 				this.$emit("send-message", this.currentMessage)
-				this.messages.push(this.currentMessage)
+				this.conversation.messages.unshift({
+					value: this.currentMessage,
+					time: new Date().toString(),
+				})
 				this.currentMessage = ""
 			}
 		},
 	},
-	watch: {
-		conversation: function() {
-			if (this.conversation !== "") {
-				this.isActive = true
-			} else {
-				this.isActive = false
-			}
+	computed: {
+		messages: function() {
+			return this.conversation.messages
+		},
+		isActive: function() {
+			return (this.conversation !== {})
 		}
-	}
+	},
 });
 
 var app = new Vue({
 	el: '#app',
 	data: {
 		conversations: {},
-		currentConversation: "",
-		messages: [],
+		currentConversation: {},
+		currentConversationName: "",
 		ws: null,
 	},
 
@@ -174,19 +183,21 @@ var app = new Vue({
 
 			case "searchUser":
 				if (message.isUserExists) {
-					// alert(message.newConversationWith)
-					// t.conversations[message.newConversationWith].is_dialog = true
-					// t.conversations[message.newConversationWith].last_message.value = "Нет сообщений..."
-
-					t.conversations[message.newConversationWith] = {
+					newConv = t.conversations
+					newConv[message.newConversationWith] = {
 						is_dialog: true,
-						last_message: {
-							value: "Нет сообщений...",
-							sender: "",
-							time: "",
-						}
+						messages: [
+							{
+								value: "Нет сообщений...",
+								sender: "",
+								time: "",
+							}
+						]
 					}
+					t.conversations = newConv
 					console.log(t.conversations)
+					t.currentConversation = t.conversations[message.newConversationWith]
+					t.currentConversationName = message.newConversationWith
 				}
 				break;
 
@@ -221,13 +232,14 @@ var app = new Vue({
 			this.ws.send(
 				JSON.stringify({
 					action: "sendMessage",
-					conversationName: this.currentConversation,
+					conversationName: this.currentConversationName,
 					message: message
 				})
 			);
 		},
 		changeConversation: function(currentChoosedConversation) {
-			this.currentConversation = currentChoosedConversation;
+			this.currentConversation = this.conversations[currentChoosedConversation];
+			this.currentConversationName = currentChoosedConversation
 		}
 	}
 });
