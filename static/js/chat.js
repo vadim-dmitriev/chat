@@ -183,8 +183,7 @@ var app = new Vue({
 
 			case "searchUser":
 				if (message.isUserExists) {
-					newConv = t.conversations
-					newConv[message.newConversationWith] = {
+					t.conversations[message.newConversationWith] = {
 						is_dialog: true,
 						messages: [
 							{
@@ -194,15 +193,26 @@ var app = new Vue({
 							}
 						]
 					}
-					t.conversations = newConv
-					console.log(t.conversations)
 					t.currentConversation = t.conversations[message.newConversationWith]
 					t.currentConversationName = message.newConversationWith
 				}
 				break;
 
 			case "newMessage":
-				alert(message.value);
+
+				for (convName in t.conversations) {
+					if (convName === message.to) {
+						console.log(convName, message.to)
+						console.log(t.conversations)
+						t.conversations[convName].messages.unshift({
+							value: message.value,
+							sender: message.from,
+							time: new Date().toString()
+						});
+						
+						break;
+					}
+				}
 				break;
 			}
 		}

@@ -61,9 +61,11 @@ func (a App) ServeUser(conn *websocket.Conn) {
 				if username == request["conversationName"] {
 					if err := user.conn.WriteJSON(map[string]interface{}{
 						"action": "newMessage",
-						"value":  request["value"],
+						"to":     thisUsername,
+						"from":   thisUsername,
+						"value":  request["message"],
 					}); err != nil {
-						panic(err)
+						continue
 					}
 					fmt.Println("sended to", username)
 					break
