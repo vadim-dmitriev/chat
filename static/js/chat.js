@@ -1,13 +1,11 @@
 Vue.component("conversation", {
 	data: function () {
-		return {
-			// isChoosed: true
-		}
+		return {}
 	},
-	props: ["conversation", "choosedConversation", "name"],
+	props: ["conversation", "choosedConversation"],
 	template: `
-		<div class="conversation" v-bind:class="{ conversationClicked: this.isChoosed }">
-			<strong>{{ name }}</strong>
+		<div class="conversation" v-bind:class="{ conversationClicked: isChoosed }">
+			<strong>{{ conversation.name }}</strong>
 			<br/><br/>
 			{{ lastMessage }}
 			<br/><br/>
@@ -16,12 +14,18 @@ Vue.component("conversation", {
 	methods: {},
 	computed: {
 		isChoosed: function() {
-			return this.name === this.choosedConversation
+			return this.conversation.name === this.choosedConversation
 		},
 		lastMessage: function() {
+			if (this.conversation.messages.length == 0) {
+				return "Нет сообщений"
+			}
 			return this.conversation.messages[0].value
 		},
 		lastMessageTime: function() {
+			if (this.conversation.messages.length == 0) {
+				return ""
+			}
 			return this.conversation.messages[0].time
 		}
 
@@ -95,8 +99,8 @@ Vue.component("conversations", {
 	props: ["conversations"],
 	template: `
 		<div class="conversations">
-			<div v-for="conversation in Object.keys(conversations)">
-				<conversation :name="conversation" :conversation="conversations[conversation]"  v-on:click.native="change(conversation)"
+			<div v-for="conversation in conversations">
+				<conversation :conversation="conversation"  v-on:click.native="change(conversation.name)"
 							  :choosedConversation="choosedConversation"
 				/>
 			</div>
@@ -121,7 +125,7 @@ Vue.component("chat", {
 	template: `
 		<div class="chat" v-show="isActive">
 			<ul>
-				<li v-for="message in messages.slice().reverse()">
+				<li v-for="message in reversedMessages">
 					{{ message.value }} - {{   message.time }}
 				</li>
 			</ul>
@@ -144,7 +148,18 @@ Vue.component("chat", {
 		},
 	},
 	computed: {
+		reversedMessages: function() {
+			if (this.conversation.messages.length == 0) {
+				return []
+			}
+			return this.conversation.messages.slice().reverse()
+		},
 		messages: function() {
+			if (this.conversation.messages.length == 0) {
+				return {
+					value: "Нет сообщений"
+				}
+			}
 			return this.conversation.messages
 		},
 		isActive: function() {
@@ -156,7 +171,7 @@ Vue.component("chat", {
 var app = new Vue({
 	el: '#app',
 	data: {
-		conversations: {},
+		conversations: [],
 		currentConversation: {},
 		currentConversationName: "",
 		ws: null,
@@ -178,12 +193,12 @@ var app = new Vue({
 			switch (message.action) {
 			case "conversations":
 				t.conversations = message.conversations;
-				console.log(t.conversations)
 				break;
 
 			case "searchUser":
 				if (message.isUserExists) {
-					t.conversations[message.newConversationWith] = {
+					t.conversations.push({
+						name: message.newConversationWith,
 						is_dialog: true,
 						messages: [
 							{
@@ -192,27 +207,34 @@ var app = new Vue({
 								time: "",
 							}
 						]
-					}
-					t.currentConversation = t.conversations[message.newConversationWith]
+					})
+					t.currentConversation = t.conversations[t.conversations.length -1]
 					t.currentConversationName = message.newConversationWith
 				}
 				break;
 
 			case "newMessage":
-
-				for (convName in t.conversations) {
-					if (convName === message.to) {
-						console.log(convName, message.to)
-						console.log(t.conversations)
-						t.conversations[convName].messages.unshift({
+				for (conversation of t.conversations) {
+					if (conversation.name === message.to) {
+						conversation.messages.unshift({
 							value: message.value,
 							sender: message.from,
 							time: new Date().toString()
 						});
-						
-						break;
+						return;
 					}
 				}
+				t.conversations.push({
+					name: message.to,
+					is_dialog: true,
+					messages: [
+						{
+							value: message.value,
+							sender: message.from,
+							time: new Date().toString()
+						},
+					]
+				})
 				break;
 			}
 		}
@@ -231,6 +253,13 @@ var app = new Vue({
 
 		},
 		searchUser: function(username) {
+			for (conversation of this.conversations) {
+				if (conversation.name == username) {
+					this.currentConversation = conversation
+					this.currentConversationName = conversation.name
+					return
+				}
+			}
 			this.ws.send(
 				JSON.stringify({
 					action: "searchUser",
@@ -248,8 +277,14 @@ var app = new Vue({
 			);
 		},
 		changeConversation: function(currentChoosedConversation) {
-			this.currentConversation = this.conversations[currentChoosedConversation];
 			this.currentConversationName = currentChoosedConversation
+
+			for (conversation of this.conversations) {
+				if (conversation.name == currentChoosedConversation) {
+					this.currentConversation = conversation
+				}
+			}
+			
 		}
 	}
 });

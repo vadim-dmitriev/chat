@@ -124,8 +124,9 @@ func (s Sqlite) AuthUser(username, password string) bool {
 
 /* GetUserConversations возвращает список бесед пользователя
 Структура ответа:
-	{
-		"{conversation_name}": {
+	[
+		{
+			"name": "{conversation_name}",
 			"is_dialog": boolean,
 			"messages": [
 				{
@@ -135,12 +136,12 @@ func (s Sqlite) AuthUser(username, password string) bool {
 				},
 			]
 		},
-		"{conversation_name}": {
+		{
 			...
 		}
-	}
+	]
 */
-func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, error) {
+func (s Sqlite) GetUserConversations(username string) ([]map[string]interface{}, error) {
 	rows, err := s.Query(`
 		SELECT conversation_id, name, is_dialog FROM members JOIN conversations USING (conversation_id) WHERE user_id = (
 			SELECT user_id FROM users where username = $1
@@ -151,7 +152,7 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 	}
 	defer rows.Close()
 
-	var conversations = make(map[string]interface{})
+	var conversations = make([]map[string]interface{}, 0)
 	var conversationName interface{}
 	var conversationID int
 	var isDialog int
@@ -168,7 +169,7 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 					(SELECT user_id FROM users WHERE username = $2)
 			`, conversationID, username).Scan(&conversationName)
 		}
-
+		conversation["name"] = conversationName.(string)
 		messagesRows, err := s.Query(`
 			SELECT value, user_id, time FROM  conversations JOIN messages USING (conversation_id)
 			WHERE conversation_id = $1
@@ -183,7 +184,8 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 					"time":   "",
 				},
 			}
-			conversations[conversationName.(string)] = conversation
+
+			conversations = append(conversations, conversation)
 			continue
 		}
 
@@ -201,7 +203,7 @@ func (s Sqlite) GetUserConversations(username string) (map[string]interface{}, e
 			})
 		}
 		conversation["messages"] = messages
-		conversations[conversationName.(string)] = conversation
+		conversations = append(conversations, conversation)
 
 	}
 

@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+
 	"github.com/vadim-dmitriev/chat/storage"
 )
 
@@ -50,7 +52,7 @@ func getConversations(request map[string]interface{}, s storage.Storager) map[st
 		return response
 	}
 	response["conversations"] = conversations
-
+	fmt.Println(conversations)
 	return response
 }
 
