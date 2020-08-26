@@ -115,6 +115,42 @@ Vue.component("conversations", {
 	},
 });
 
+Vue.component("message", {
+	data: function() {
+		return {}
+	},
+	props: ["value"],
+	template: `
+		<div class="message">
+			<svg xmlns="http://www.w3.org/2000/svg" :width="rectWidth" :height="rectHeight" version="1.1">
+				<rect :width="rectWidth" :height="rectHeight" rx="10" class="rect"/>
+				<foreignObject x="50%" y="50%"  :width="rectWidth" :height="rectHeight" text-anchor="start">
+					<div class="value" xmlns="http://www.w3.org/1999/xhtml">
+						{{ value }}
+					</div>
+				</foreignObject>
+			</svg>
+		</div>
+	`,
+	computed: {
+		rectHeight: function() {
+			if (this.value.length < 10) {
+				return 30
+			}
+			if (String(this.value).includes(" ") && this.value.length > 30)   {
+				return this.value.length 
+			}
+			return 30
+		},
+		rectWidth: function() {
+			if (this.value.length > 10) {
+				return 300
+			}
+			return this.value.length * 30
+		}
+	}
+})
+
 Vue.component("chat", {
 	data: function() {
 		return {
@@ -124,9 +160,9 @@ Vue.component("chat", {
 	props: ["conversation"],
 	template: `
 		<div class="chat" v-show="isActive">
-			<ul>
+			<ul class="messages">
 				<li v-for="message in reversedMessages">
-					{{ message.value }} - {{   message.time }}
+					<message :value="message.value" />
 				</li>
 			</ul>
 			<div>

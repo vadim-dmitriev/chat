@@ -1,7 +1,7 @@
 html, body, ul {
-    /* height: 100%; */
     margin: 0;
     padding: 0;
+    list-style-type: none;
 }
 
 #container {
@@ -67,6 +67,28 @@ html, body, ul {
     left: 609px;
     top: 0px;
 
+
     background: #F5F8FF;
     border-radius: 0px 39px 39px 0px;
-} 
+}
+
+.messages {
+    height: 900px;
+    scroll-behavior: smooth;
+    overflow-y: scroll;
+}
+
+.message {
+    margin: 10px 20px auto;
+}
+
+.message>svg>rect {
+    fill: #d0d8ea;
+}
+
+.value {
+    padding: 0;
+    margin: 0;
+    height: 100%;
+    overflow: auto;
+}
