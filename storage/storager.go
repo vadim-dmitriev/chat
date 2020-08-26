@@ -1,6 +1,13 @@
 package storage
 
+import (
+	"github.com/vadim-dmitriev/chat/auth"
+	"github.com/vadim-dmitriev/chat/chat"
+)
+
 type Storager interface {
+	auth.Storager
+	chat.Storager
 	RegisterUser(string, string) error
 	AuthUser(string, string) bool
 	GetUserConversations(string) ([]map[string]interface{}, error)
