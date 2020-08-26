@@ -6,8 +6,8 @@ import (
 )
 
 type Storager interface {
-	auth.Storager
-	chat.Storager
+	auth.UserRepository
+	chat.Repository
 	RegisterUser(string, string) error
 	AuthUser(string, string) bool
 	GetUserConversations(string) ([]map[string]interface{}, error)

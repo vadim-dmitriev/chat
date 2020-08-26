@@ -2,7 +2,7 @@ package chat
 
 import "github.com/vadim-dmitriev/chat/model"
 
-// Storager интерфейс для хранения данных мессенджера
-type Storager interface {
+// Repository интерфейс для хранения данных мессенджера
+type Repository interface {
 	SaveMessage(message model.Message, from model.User, to model.Conversation) error
 }
