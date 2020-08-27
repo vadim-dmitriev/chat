@@ -24,9 +24,11 @@ type authResponseBody struct {
 
 func (h handler) signUp(w http.ResponseWriter, r *http.Request) {
 	var encoder = json.NewEncoder(w)
+	var allowedMethods = []string{
+		http.MethodPost,
+	}
 
-	if r.Method != http.MethodPost {
-		err := fmt.Errorf("method %s not allowed", r.Method)
+	if err := isMethodAllow(r.Method, allowedMethods); err != nil {
 		encodeResponse(encoder, err)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -50,9 +52,11 @@ func (h handler) signUp(w http.ResponseWriter, r *http.Request) {
 
 func (h handler) signIn(w http.ResponseWriter, r *http.Request) {
 	var encoder = json.NewEncoder(w)
+	var allowedMethods = []string{
+		http.MethodPost,
+	}
 
-	if r.Method != http.MethodPost {
-		err := fmt.Errorf("method %s not allowed", r.Method)
+	if err := isMethodAllow(r.Method, allowedMethods); err != nil {
 		encodeResponse(encoder, err)
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -72,6 +76,16 @@ func (h handler) signIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+}
+
+func isMethodAllow(method string, allowedMethods []string) error {
+	for _, allowedMethod := range allowedMethods {
+		if method == allowedMethod {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("method %s not allowed", method)
 }
 
 func encodeResponse(encoder *json.Encoder, err error) {
