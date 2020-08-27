@@ -3,10 +3,15 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 
 	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/mattn/go-sqlite3"
+)
+
+const (
+	initSQLScriptName = "init.sql"
 )
 
 // Sqlite имплементирует интерфейс Storager
@@ -22,56 +27,17 @@ func NewSqlite() Storager {
 		panic(err)
 	}
 
-	db.Exec(`
-		CREATE table 'users' (
-			'user_id' INTEGER PRIMARY KEY,
-			'username' text NOT NULL,
-			'password' text NOT NULL
-		);
-	`)
-
-	db.Exec(`
-		CREATE TABLE 'conversations' (
-			'conversation_id' INTEGER PRIMARY KEY,
-			'name' text,
-			'is_dialog' INTEGER NOT NULL
-		);
-	`)
-
-	db.Exec(`
-		CREATE table 'messages' (
-			'message_id' INTEGER PRIMARY KEY,
-			'value' text NOT NULL,
-			'user_id' INTEGER NOT NULL,
-			'conversation_id' INTEGER NOT NULL,
-			'time' datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			FOREIGN KEY ('user_id') REFERENCES users ('user_id'),
-			FOREIGN KEY ('conversation_id') REFERENCES conversations ('conversation_id')
-		);
-	`)
-
-	db.Exec(`
-		CREATE table 'members' (
-			'member_id' INTEGER PRIMARY KEY,
-			'user_id' INTEGER NOT NULL,
-			'conversation_id' INTEGER NOT NULL,
-			FOREIGN KEY ('user_id') REFERENCES users ('user_id'),
-			FOREIGN KEY ('conversation_id') REFERENCES conversations ('conversation_id')
-		);
-	`)
-
-	db.Exec(`
-		CREATE TABLE 'cookies' (
-			'cookie_id' INTEGER PRIMARY KEY,
-			'user_id' INTEGER NOT NULL,
-			'value' text,
-			FOREIGN KEY ('user_id') REFERENCES users ('user_id')
-		);
-	`)
-
-	return Sqlite{
-		db,
+	initSQLScript, err := ioutil.ReadFile(initSQLScriptName)
+	if err != nil {
+		panic(err)
 	}
+
+	_, err = db.Exec(string(initSQLScript))
+	if err != nil {
+		panic(err)
+	}
+
+	return Sqlite{db}
 }
 
 // IsUserExists проверяет существует ли пользователь с именем username
