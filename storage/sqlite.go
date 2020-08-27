@@ -12,6 +12,7 @@ import (
 
 const (
 	initSQLScriptName = "init.sql"
+	dbName            = "app.db"
 )
 
 // Sqlite имплементирует интерфейс Storager
@@ -22,7 +23,7 @@ type Sqlite struct {
 // NewSqlite создает таблицы в БД и возвращает
 // пул соединений к ней
 func NewSqlite() Storager {
-	db, err := sql.Open("sqlite3", "app.db")
+	db, err := sql.Open("sqlite3", dbName)
 	if err != nil {
 		panic(err)
 	}
