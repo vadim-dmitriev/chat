@@ -7,14 +7,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Auth имплементирует интерфейс IAuth
+// Auth имплементирует интерфейс IAuth. Реализует аутентификацию
+// пользователя при помощи JWT
 type Auth struct {
-	repo UserRepository
+	Repo UserRepository
 }
 
 // SignIn аутентифицирует пользователя
 func (a Auth) SignIn(username, password string) error {
-	user, err := a.repo.GetUser(username)
+	user, err := a.Repo.GetUser(username)
 	if err != nil {
 		return err
 	}
@@ -38,7 +39,7 @@ func (a Auth) SignUp(username, password string) error {
 		Password: encryptedPassword,
 	}
 
-	if err := a.repo.CreateUser(user); err != nil {
+	if err := a.Repo.CreateUser(user); err != nil {
 		return err
 	}
 

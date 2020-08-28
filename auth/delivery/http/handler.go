@@ -27,23 +27,24 @@ func (h handler) signUp(w http.ResponseWriter, r *http.Request) {
 	var allowedMethods = []string{
 		http.MethodPost,
 	}
+	w.Header().Add("content-type", "application/json")
 
 	if err := isMethodAllow(r.Method, allowedMethods); err != nil {
-		encodeResponse(encoder, err)
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		encodeResponse(encoder, err)
 		return
 	}
 
 	body := authRequestBody{}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		encodeResponse(encoder, err)
 		w.WriteHeader(http.StatusBadRequest)
+		encodeResponse(encoder, err)
 		return
 	}
 
 	if err := h.auth.SignUp(body.Username, body.Password); err != nil {
-		encodeResponse(encoder, err)
 		w.WriteHeader(http.StatusInternalServerError)
+		encodeResponse(encoder, err)
 		return
 	}
 
@@ -55,23 +56,24 @@ func (h handler) signIn(w http.ResponseWriter, r *http.Request) {
 	var allowedMethods = []string{
 		http.MethodPost,
 	}
+	w.Header().Add("content-type", "application/json")
 
 	if err := isMethodAllow(r.Method, allowedMethods); err != nil {
-		encodeResponse(encoder, err)
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		encodeResponse(encoder, err)
 		return
 	}
 
 	body := authRequestBody{}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		encodeResponse(encoder, err)
 		w.WriteHeader(http.StatusBadRequest)
+		encodeResponse(encoder, err)
 		return
 	}
 
 	if err := h.auth.SignIn(body.Username, body.Password); err != nil {
-		encodeResponse(encoder, err)
 		w.WriteHeader(http.StatusUnauthorized)
+		encodeResponse(encoder, err)
 		return
 	}
 

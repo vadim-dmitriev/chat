@@ -7,29 +7,20 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/vadim-dmitriev/chat/app"
+	authDeliveryHTTP "github.com/vadim-dmitriev/chat/auth/delivery/http"
+
+	"github.com/vadim-dmitriev/chat/auth"
 	"github.com/vadim-dmitriev/chat/storage"
 )
 
 func main() {
-	s := storage.NewSqlite()
-	app := app.New(s)
+	sqliteDB := storage.NewSqlite()
 
-	// API Paths
-	http.HandleFunc("/api/v1/auth", app.AuthHandler)
-	http.HandleFunc("/api/v1/register", app.RegisterHandler)
-	http.HandleFunc("/api/v1/ws", app.WebSocketHandler)
+	auth := auth.Auth{
+		Repo: sqliteDB,
+	}
 
-	// Static files
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	http.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {})
-
-	// Pages
-	http.Handle("/signin", page("static/html/signin.html"))
-	http.Handle("/signup", page("static/html/signup.html"))
-	http.Handle("/", app.AuthMiddleware(
-		page("static/html/chat.html"),
-	))
+	authDeliveryHTTP.RegisterEndpoints(auth)
 
 	exitChan := make(chan os.Signal)
 	signal.Notify(exitChan, os.Interrupt)
