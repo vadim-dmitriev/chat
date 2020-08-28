@@ -2,8 +2,8 @@ package auth
 
 import "github.com/vadim-dmitriev/chat/model"
 
-// UserRepository интерфейс хранилища пользователей
-type UserRepository interface {
+// IUserRepository интерфейс хранилища пользователей
+type IUserRepository interface {
 	CreateUser(user model.User) error
 	GetUser(username string) (model.User, error)
 }

@@ -6,6 +6,6 @@ import (
 )
 
 type Storager interface {
-	auth.UserRepository
-	chat.Repository
+	auth.IUserRepository
+	chat.IRepository
 }
