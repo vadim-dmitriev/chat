@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/vadim-dmitriev/chat/auth"
 	authDeliveryHTTP "github.com/vadim-dmitriev/chat/auth/delivery/http"
@@ -14,7 +15,10 @@ func main() {
 	sqliteDB := storage.NewSqlite()
 
 	auth := auth.JWT{
-		Repo: sqliteDB,
+		Repo:         sqliteDB,
+		Secret:       []byte("secret"),
+		Method:       auth.SigningMethodHS256,
+		ExpiringTime: time.Duration(1 * time.Hour),
 	}
 	authDeliveryHTTP.RegisterEndpoints(auth)
 

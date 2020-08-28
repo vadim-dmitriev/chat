@@ -8,6 +8,10 @@ import (
 	"github.com/vadim-dmitriev/chat/auth"
 )
 
+const (
+	authHeaderName = "Authorization"
+)
+
 type handler struct {
 	auth auth.IAuth
 }
@@ -71,12 +75,15 @@ func (h handler) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.auth.SignIn(body.Username, body.Password); err != nil {
+	token, err := h.auth.SignIn(body.Username, body.Password)
+	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		encodeResponse(encoder, err)
 		return
 	}
 
+	fmt.Println(token)
+	w.Header().Add(authHeaderName, token)
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 

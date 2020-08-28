@@ -44,8 +44,8 @@ func NewSqlite() Storager {
 
 // CreateUser заносит новую запись в таблицу users и таблицу cookies
 func (s Sqlite) CreateUser(user model.User) error {
-	if err := s.DB.QueryRow(`SELECT * FROM USERS WHERE username = $1;`, user.Username).Scan(); err == sql.ErrNoRows {
-		return fmt.Errorf("username %s already exists", user.Username)
+	if err := s.DB.QueryRow(`SELECT * FROM USERS WHERE username = $1;`, user.Name).Scan(); err != sql.ErrNoRows {
+		return fmt.Errorf("username %s already exists", user.Name)
 	}
 
 	fingerprint, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -53,7 +53,7 @@ func (s Sqlite) CreateUser(user model.User) error {
 		return err
 	}
 
-	res, err := s.Exec(`INSERT INTO users (username, password) VALUES ($1, $2)`, user.Username, string(fingerprint))
+	res, err := s.Exec(`INSERT INTO users (username, password) VALUES ($1, $2)`, user.Name, string(fingerprint))
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,12 @@ func (s Sqlite) CreateUser(user model.User) error {
 }
 
 func (s Sqlite) GetUser(username string) (model.User, error) {
-	return model.User{}, nil
+	var id, password string
+	if err := s.DB.QueryRow(`SELECT * FROM USERS WHERE username = $1`, username).Scan(&id, &username, &password); err == sql.ErrNoRows {
+		return model.User{}, fmt.Errorf("user '%s' not found", username)
+	}
+
+	return model.User{ID: id, Name: username, Password: password}, nil
 }
 
 func (s Sqlite) SaveMessage(message model.Message, from model.User, to model.Conversation) error {
