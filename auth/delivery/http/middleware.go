@@ -7,29 +7,27 @@ import (
 	"github.com/vadim-dmitriev/chat/auth"
 )
 
-type middleware struct {
-	auth auth.IAuth
+type Middleware struct {
+	Auth auth.IAuth
 }
 
-func (m middleware) Handle(next http.HandlerFunc) http.HandlerFunc {
+func (m Middleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get(authHeaderName)
-
-		if token == "" {
-			w.WriteHeader(http.StatusUnauthorized)
+		authCookie, err := r.Cookie(authHeaderName)
+		if err == http.ErrNoCookie {
+			http.Redirect(w, r, "/signin", http.StatusTemporaryRedirect)
 			return
 		}
 
-		user, err := m.auth.ParseToken(token)
+		_, newToken, err := m.Auth.ParseToken(authCookie.Value)
 		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusUnauthorized)
+			http.Redirect(w, r, "/signin", http.StatusTemporaryRedirect)
 			return
 		}
-		fmt.Println(user)
 
-		next(w, r)
+		w.Header().Add("Set-Cookie", fmt.Sprintf("%s=%s; HttpOnly; Path=/", authHeaderName, newToken))
+		next.ServeHTTP(w, r)
 	}
 
 }

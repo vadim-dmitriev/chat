@@ -75,6 +75,26 @@ func (s Sqlite) GetUser(username string) (model.User, error) {
 	return model.User{ID: id, Name: username, Password: password}, nil
 }
 
+func (s Sqlite) GetUserByToken(token string) (model.User, error) {
+	var id, username, password string
+	if err := s.DB.QueryRow(`
+		SELECT user_id, username, password FROM USERS JOIN COOKIES USING(user_id) WHERE value = $1`, token).Scan(&id, &username, &password); err == sql.ErrNoRows {
+		return model.User{}, fmt.Errorf("user not found")
+	}
+
+	return model.User{ID: id, Name: username, Password: password}, nil
+}
+
+func (s Sqlite) SetUserToken(user model.User, token string) error {
+	_, err := s.DB.Exec(`
+		UPDATE COOKIES SET value=$1 WHERE user_id=$2
+	`, token, user.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s Sqlite) SaveMessage(message model.Message, from model.User, to model.Conversation) error {
 	return nil
 }

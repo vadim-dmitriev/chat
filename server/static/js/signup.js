@@ -7,7 +7,7 @@ var app = new Vue({
     methods: {
         doRegister: function() {
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/api/v1/register", false);
+            xhr.open("POST", "/api/v1/signup", false);
 
             xhr.send(
                 JSON.stringify({
@@ -15,10 +15,6 @@ var app = new Vue({
                     "password": this.password,
                 })
             );
-
-            if (xhr.status == 200) {
-                window.location.replace("/signin");
-            }
         }
     }
 });

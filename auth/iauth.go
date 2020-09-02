@@ -6,5 +6,5 @@ import "github.com/vadim-dmitriev/chat/model"
 type IAuth interface {
 	SignUp(username, password string) error
 	SignIn(username, password string) (token string, err error)
-	ParseToken(token string) (model.User, error)
+	ParseToken(token string) (model.User, string, error)
 }

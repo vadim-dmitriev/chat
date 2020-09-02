@@ -7,7 +7,7 @@ var app = new Vue({
     methods: {
         doAuth: function() {
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/api/v1/auth", false);
+            xhr.open("POST", "/api/v1/signin", false);
 
             xhr.send(
                 JSON.stringify({

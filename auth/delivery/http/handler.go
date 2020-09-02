@@ -82,9 +82,7 @@ func (h handler) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(token)
-	w.Header().Add(authHeaderName, token)
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	w.Header().Add("Set-Cookie", fmt.Sprintf("%s=%s; HttpOnly; Path=/", authHeaderName, token))
 }
 
 func isMethodAllow(method string, allowedMethods []string) error {
