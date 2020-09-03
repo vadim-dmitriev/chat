@@ -17,13 +17,13 @@ Vue.component("conversation", {
 			return this.conversation.name === this.choosedConversation
 		},
 		lastMessage: function() {
-			if (this.conversation.messages.length == 0) {
+			if (this.conversation.messages == null || this.conversation.messages.length == 0) {
 				return "Нет сообщений"
 			}
 			return this.conversation.messages[0].value
 		},
 		lastMessageTime: function() {
-			if (this.conversation.messages.length == 0) {
+			if (this.conversation.messages == null || this.conversation.messages.length == 0)  {
 				return ""
 			}
 			return this.conversation.messages[0].time
@@ -99,7 +99,7 @@ Vue.component("conversations", {
 	props: ["conversations"],
 	template: `
 		<div class="conversations">
-			<div v-for="conversation in conversations">
+			<div v-for="conversation of conversations">
 				<conversation :conversation="conversation"  v-on:click.native="change(conversation.name)"
 							  :choosedConversation="choosedConversation"
 				/>
@@ -185,13 +185,13 @@ Vue.component("chat", {
 	},
 	computed: {
 		reversedMessages: function() {
-			if (this.conversation.messages.length == 0) {
+			if (this.conversation.messages == null || this.conversation.messages.length == 0) {
 				return []
 			}
 			return this.conversation.messages.slice().reverse()
 		},
 		messages: function() {
-			if (this.conversation.messages.length == 0) {
+			if (this.conversation.messages == null || this.conversation.messages.length == 0) {
 				return {
 					value: "Нет сообщений"
 				}
@@ -199,7 +199,8 @@ Vue.component("chat", {
 			return this.conversation.messages
 		},
 		isActive: function() {
-			return (this.conversation !== {})
+			console.log(this.conversation)
+			return (this.conversation != null)
 		}
 	},
 });
@@ -208,7 +209,7 @@ var app = new Vue({
 	el: '#app',
 	data: {
 		conversations: [],
-		currentConversation: {},
+		currentConversation: null,
 		currentConversationName: "",
 		ws: null,
 	},
@@ -227,8 +228,8 @@ var app = new Vue({
 			console.log("NEW MESSAGE FROM SERVER:", message);
 
 			switch (message.action) {
-			case "conversations":
-				t.conversations = message.conversations;
+			case "getConversations":
+				t.conversations = message.data;
 				break;
 
 			case "searchUser":
@@ -276,7 +277,8 @@ var app = new Vue({
 		}
 
 	},
-	destroyed: function() {
+	beforeDestroy: function() {
+		alert("close")
 		this.ws.close()
 	},
 	methods: {
