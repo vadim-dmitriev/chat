@@ -8,4 +8,5 @@ type IRepository interface {
 
 	SaveMessage(message model.Message, from model.User, to model.Conversation) error
 	GetConversations(user model.User) ([]model.Conversation, error)
+	GetMessages(conv model.Conversation, offset, limit int) ([]model.Message, error)
 }

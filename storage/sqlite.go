@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -105,7 +106,9 @@ func (s Sqlite) SaveMessage(message model.Message, from model.User, to model.Con
 
 func (s Sqlite) GetConversations(user model.User) ([]model.Conversation, error) {
 	rows, err := s.DB.Query(`
-		SELECT conversation_id, name, is_dialog, member_id FROM CONVERSATIONS JOIN MEMBERS USING(conversation_id) WHERE user_id = $1
+		SELECT conversation_id, name, is_dialog, member_id
+		FROM CONVERSATIONS JOIN MEMBERS USING(conversation_id)
+		WHERE user_id = $1
 	`, user.ID)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -125,9 +128,9 @@ func (s Sqlite) GetConversations(user model.User) ([]model.Conversation, error) 
 			&isDialog,
 			&memberID,
 		); err != nil {
-			fmt.Println(err)
 			return nil, err
 		}
+
 		if isDialog == 1 {
 			isDialogBool = true
 			if err := s.QueryRow(
@@ -138,11 +141,60 @@ func (s Sqlite) GetConversations(user model.User) ([]model.Conversation, error) 
 			}
 		}
 
-		conversations = append(conversations, model.Conversation{
+		conv := model.Conversation{
 			ID:       conversationID,
 			Name:     conversationName.(string),
 			IsDialog: isDialogBool,
+		}
+
+		convLastMessages, err := s.GetMessages(conv, 0, 10)
+		if err != nil {
+			return nil, err
+		}
+
+		conv.Messages = convLastMessages
+		conversations = append(conversations, conv)
+	}
+
+	return conversations, nil
+}
+
+func (s Sqlite) GetMessages(conv model.Conversation, offset, limit int) ([]model.Message, error) {
+	rows, err := s.DB.Query(`
+		SELECT conversation_id, value, user_id, username, time
+		FROM MESSAGES JOIN USERS USING(user_id)
+		WHERE conversation_id = $1
+		LIMIT $2
+		OFFSET $3
+	`, conv.ID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	var messages = make([]model.Message, 0)
+	var messageID, value, senderID, senderName, datetime string
+	for rows.Next() {
+		if err := rows.Scan(
+			&messageID,
+			&value,
+			&senderID,
+			&senderName,
+			&datetime,
+		); err != nil {
+			return nil, err
+		}
+
+		messages = append(messages, model.Message{
+			ID:   messageID,
+			Text: value,
+			From: model.User{
+				ID:   senderID,
+				Name: senderName,
+			},
+			To:       conv,
+			Datetime: time.Time{},
 		})
 	}
-	return conversations, nil
+
+	return messages, nil
 }

@@ -20,13 +20,13 @@ Vue.component("conversation", {
 			if (this.conversation.messages == null || this.conversation.messages.length == 0) {
 				return "Нет сообщений"
 			}
-			return this.conversation.messages[0].value
+			return this.conversation.messages[0].text
 		},
 		lastMessageTime: function() {
 			if (this.conversation.messages == null || this.conversation.messages.length == 0)  {
 				return ""
 			}
-			return this.conversation.messages[0].time
+			return this.conversation.messages[0].datetime
 		}
 
 	}
@@ -119,34 +119,40 @@ Vue.component("message", {
 	data: function() {
 		return {}
 	},
-	props: ["value"],
+	props: ["message"],
 	template: `
-		<div class="message">
+		<div class="message" :align="msgType">
 			<svg xmlns="http://www.w3.org/2000/svg" :width="rectWidth" :height="rectHeight" version="1.1">
 				<rect :width="rectWidth" :height="rectHeight" rx="10" class="rect"/>
 				<foreignObject x="50%" y="50%"  :width="rectWidth" :height="rectHeight" text-anchor="start">
 					<div class="value" xmlns="http://www.w3.org/1999/xhtml">
-						{{ value }}
+						{{ message.text }}
 					</div>
 				</foreignObject>
 			</svg>
 		</div>
 	`,
 	computed: {
+		msgType: function () {
+			if (this.message.from.id == USER) {
+				return "right"
+			}
+			return "left"
+		},
 		rectHeight: function() {
-			if (this.value.length < 10) {
+			if (this.message.text.length < 10) {
 				return 30
 			}
-			if (String(this.value).includes(" ") && this.value.length > 30)   {
-				return this.value.length 
+			if (String(this.message.text).includes(" ") && this.message.text.length > 30)   {
+				return this.message.text.length 
 			}
 			return 30
 		},
 		rectWidth: function() {
-			if (this.value.length > 10) {
+			if (this.message.text.length  > 10) {
 				return 300
 			}
-			return this.value.length * 30
+			return this.message.text.length  * 30
 		}
 	}
 })
@@ -162,7 +168,7 @@ Vue.component("chat", {
 		<div class="chat" v-show="isActive">
 			<ul class="messages">
 				<li v-for="message in reversedMessages">
-					<message :value="message.value" />
+					<message :message="message" />
 				</li>
 			</ul>
 			<div>
@@ -185,13 +191,13 @@ Vue.component("chat", {
 	},
 	computed: {
 		reversedMessages: function() {
-			if (this.conversation.messages == null || this.conversation.messages.length == 0) {
+			if (this.conversation == null || this.conversation.messages == null || this.conversation.messages.length == 0) {
 				return []
 			}
 			return this.conversation.messages.slice().reverse()
 		},
 		messages: function() {
-			if (this.conversation.messages == null || this.conversation.messages.length == 0) {
+			if (this.conversation == null || this.conversation.messages == null || this.conversation.messages.length == 0) {
 				return {
 					value: "Нет сообщений"
 				}
@@ -199,11 +205,12 @@ Vue.component("chat", {
 			return this.conversation.messages
 		},
 		isActive: function() {
-			console.log(this.conversation)
 			return (this.conversation != null)
 		}
 	},
 });
+
+let USER = null;
 
 var app = new Vue({
 	el: '#app',
@@ -220,6 +227,7 @@ var app = new Vue({
 		this.ws = new WebSocket("ws://"+window.location.host+"/api/v1/ws");
 
 		this.ws.onopen = function() {
+			t.getUser();
 			t.getConversaions();
 		}
 
@@ -228,6 +236,10 @@ var app = new Vue({
 			console.log("NEW MESSAGE FROM SERVER:", message);
 
 			switch (message.action) {
+			case "getUser":
+				USER = message.data.userID;
+				break;
+
 			case "getConversations":
 				t.conversations = message.data;
 				break;
@@ -282,6 +294,13 @@ var app = new Vue({
 		this.ws.close()
 	},
 	methods: {
+		getUser: function() {
+			this.ws.send(
+				JSON.stringify({
+					action: "getUser"
+				})
+			);
+		},
 		getConversaions: function () {
 			this.ws.send(
 				JSON.stringify({

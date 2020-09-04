@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -11,6 +12,7 @@ import (
 
 const (
 	reqGetConversations = "getConversations"
+	reqGetUser          = "getUser"
 )
 
 type upgradeHandler struct {
@@ -75,9 +77,18 @@ func (c client) Serve(conn *websocket.Conn, chat chat.IChat) {
 		}
 		log.Printf("message from client %s: %s", c.Name, req.Action)
 		switch req.Action {
+		case reqGetUser:
+			res.Success = true
+			res.Action = reqGetUser
+			res.Data = map[string]interface{}{
+				"userID": c.ID,
+			}
+			conn.WriteJSON(res)
+
 		case reqGetConversations:
 			convs, err := chat.GetConversations(c.User)
 			if err != nil {
+				fmt.Println(err)
 				res.Success = false
 			} else {
 				res.Success = true
