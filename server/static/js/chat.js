@@ -122,14 +122,8 @@ Vue.component("message", {
 	props: ["message"],
 	template: `
 		<div class="message" :align="msgType">
-			<svg xmlns="http://www.w3.org/2000/svg" :width="rectWidth" :height="rectHeight" version="1.1">
-				<rect :width="rectWidth" :height="rectHeight" rx="10" class="rect"/>
-				<foreignObject x="50%" y="50%"  :width="rectWidth" :height="rectHeight" text-anchor="start">
-					<div class="value" xmlns="http://www.w3.org/1999/xhtml">
-						{{ message.text }}
-					</div>
-				</foreignObject>
-			</svg>
+		{{ message.text }}
+			
 		</div>
 	`,
 	computed: {
@@ -264,22 +258,32 @@ var app = new Vue({
 
 			case "newMessage":
 				for (conversation of t.conversations) {
-					if (conversation.name === message.to) {
+					if (conversation.id === message.data.to.id) {
 						conversation.messages.unshift({
-							value: message.value,
-							sender: message.from,
+							text: message.data.text,
+							from: {
+								id: message.data.from.id
+							},
+							to: {
+								id: message.data.to.id,
+							},
 							time: new Date().toString()
 						});
 						return;
 					}
 				}
 				t.conversations.push({
-					name: message.to,
+					name: message.data.to.name,
 					is_dialog: true,
 					messages: [
 						{
-							value: message.value,
-							sender: message.from,
+							text: message.data.text,
+							from: {
+								id: message.data.from.id
+							},
+							to: {
+								id: message.data.to.id,
+							},
 							time: new Date().toString()
 						},
 					]
@@ -327,9 +331,11 @@ var app = new Vue({
 		sendMessage: function(message) {
 			this.ws.send(
 				JSON.stringify({
-					action: "sendMessage",
-					conversationName: this.currentConversationName,
-					message: message
+					action: "newMessage",
+					data: {
+						conversationID: this.currentConversation.id,
+						text: message
+					}
 				})
 			);
 		},

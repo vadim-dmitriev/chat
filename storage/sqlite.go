@@ -100,7 +100,14 @@ func (s Sqlite) SetUserToken(user model.User, token string) error {
 	return nil
 }
 
-func (s Sqlite) SaveMessage(message model.Message, from model.User, to model.Conversation) error {
+func (s Sqlite) SaveMessage(message model.Message) error {
+	_, err := s.DB.Exec(`
+		INSERT INTO MESSAGES(value, user_id, conversation_id) VALUES($1, $2, $3)
+	`, message.Text, message.From.ID, message.To.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -164,6 +171,7 @@ func (s Sqlite) GetMessages(conv model.Conversation, offset, limit int) ([]model
 		SELECT conversation_id, value, user_id, username, time
 		FROM MESSAGES JOIN USERS USING(user_id)
 		WHERE conversation_id = $1
+		ORDER BY time DESC
 		LIMIT $2
 		OFFSET $3
 	`, conv.ID, limit, offset)
