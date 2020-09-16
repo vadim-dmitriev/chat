@@ -88,7 +88,7 @@ func (a JWT) ParseToken(tokenString string) (model.User, error) {
 	}
 	userMap := claimsMap["user"].(map[string]interface{})
 	user := model.User{
-		ID:       userMap["ID"].(string),
+		Id:       userMap["ID"].(string),
 		Name:     userMap["Name"].(string),
 		Password: userMap["Password"].(string),
 	}

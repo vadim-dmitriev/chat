@@ -5,10 +5,11 @@ import (
 	"net/http"
 
 	"github.com/vadim-dmitriev/chat/auth"
+	"github.com/vadim-dmitriev/chat/model"
 )
 
 type Middleware struct {
-	Auth auth.IAuth
+	Auth auth.AuthServiceServer
 }
 
 func (m Middleware) Handle(next http.HandlerFunc) http.HandlerFunc {
@@ -20,7 +21,10 @@ func (m Middleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		_, newToken, err := m.Auth.ParseToken(authCookie.Value)
+		token := model.Token{
+			Value: authCookie.Value,
+		}
+		newToken, err := m.Auth.ParseToken(nil, &token)
 		if err != nil {
 			http.Redirect(w, r, "/signin", http.StatusTemporaryRedirect)
 			return

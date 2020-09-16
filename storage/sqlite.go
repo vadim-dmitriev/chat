@@ -60,7 +60,7 @@ func (s Sqlite) CreateUser(user model.User) error {
 	}
 	newUserPrimaryKey, err := res.LastInsertId()
 
-	if _, err := s.Exec(`INSERT INTO cookies (user_id) VALUES ($1)`, newUserPrimaryKey); err != nil {
+	if _, err := s.Exec(`INSERT INTO cookies (user_Id) VALUES ($1)`, newUserPrimaryKey); err != nil {
 		return err
 	}
 
@@ -68,22 +68,22 @@ func (s Sqlite) CreateUser(user model.User) error {
 }
 
 func (s Sqlite) GetUser(username string) (model.User, error) {
-	var id, password string
-	if err := s.DB.QueryRow(`SELECT * FROM USERS WHERE username = $1`, username).Scan(&id, &username, &password); err == sql.ErrNoRows {
+	var Id, password string
+	if err := s.DB.QueryRow(`SELECT * FROM USERS WHERE username = $1`, username).Scan(&Id, &username, &password); err == sql.ErrNoRows {
 		return model.User{}, fmt.Errorf("user '%s' not found", username)
 	}
 
-	return model.User{ID: id, Name: username, Password: password}, nil
+	return model.User{Id: Id, Name: username, Password: password}, nil
 }
 
 func (s Sqlite) GetUserByToken(token string) (model.User, error) {
-	var id, username, password string
+	var Id, username, password string
 	if err := s.DB.QueryRow(`
-		SELECT user_id, username, password FROM USERS JOIN COOKIES USING(user_id) WHERE value = $1`, token).Scan(&id, &username, &password); err == sql.ErrNoRows {
+		SELECT user_Id, username, password FROM USERS JOIN COOKIES USING(user_Id) WHERE value = $1`, token).Scan(&Id, &username, &password); err == sql.ErrNoRows {
 		return model.User{}, fmt.Errorf("user not found")
 	}
 
-	return model.User{ID: id, Name: username, Password: password}, nil
+	return model.User{Id: Id, Name: username, Password: password}, nil
 }
 
 func (s Sqlite) GetUserByTokenChat(token string) (model.User, error) {
@@ -92,8 +92,8 @@ func (s Sqlite) GetUserByTokenChat(token string) (model.User, error) {
 
 func (s Sqlite) SetUserToken(user model.User, token string) error {
 	_, err := s.DB.Exec(`
-		UPDATE COOKIES SET value=$1 WHERE user_id=$2
-	`, token, user.ID)
+		UPDATE COOKIES SET value=$1 WHERE user_Id=$2
+	`, token, user.Id)
 	if err != nil {
 		return err
 	}
@@ -102,8 +102,8 @@ func (s Sqlite) SetUserToken(user model.User, token string) error {
 
 func (s Sqlite) SaveMessage(message model.Message) error {
 	_, err := s.DB.Exec(`
-		INSERT INTO MESSAGES(value, user_id, conversation_id) VALUES($1, $2, $3)
-	`, message.Text, message.From.ID, message.To.ID)
+		INSERT INTO MESSAGES(value, user_Id, conversation_Id) VALUES($1, $2, $3)
+	`, message.Text, message.From.Id, message.To.Id)
 	if err != nil {
 		return err
 	}
@@ -113,27 +113,27 @@ func (s Sqlite) SaveMessage(message model.Message) error {
 
 func (s Sqlite) GetConversations(user model.User) ([]model.Conversation, error) {
 	rows, err := s.DB.Query(`
-		SELECT conversation_id, name, is_dialog, member_id
-		FROM CONVERSATIONS JOIN MEMBERS USING(conversation_id)
-		WHERE user_id = $1
-	`, user.ID)
+		SELECT conversation_Id, name, is_dialog, member_Id
+		FROM CONVERSATIONS JOIN MEMBERS USING(conversation_Id)
+		WHERE user_Id = $1
+	`, user.Id)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	var conversationID, memberID string
+	var conversationId, memberId string
 	var isDialog int
 	var isDialogBool bool
 	var conversationName interface{}
 	var conversations = make([]model.Conversation, 0)
 	for rows.Next() {
 		if err := rows.Scan(
-			&conversationID,
+			&conversationId,
 			&conversationName,
 			&isDialog,
-			&memberID,
+			&memberId,
 		); err != nil {
 			return nil, err
 		}
@@ -141,25 +141,25 @@ func (s Sqlite) GetConversations(user model.User) ([]model.Conversation, error) 
 		if isDialog == 1 {
 			isDialogBool = true
 			if err := s.QueryRow(
-				`SELECT username FROM USERS WHERE user_id = $1
+				`SELECT username FROM USERS WHERE user_Id = $1
 
-			`, memberID).Scan(&conversationName); err != nil {
+			`, memberId).Scan(&conversationName); err != nil {
 				return nil, err
 			}
 		}
 
 		conv := model.Conversation{
-			ID:       conversationID,
+			Id:       conversationId,
 			Name:     conversationName.(string),
 			IsDialog: isDialogBool,
 		}
 
-		convLastMessages, err := s.GetMessages(conv, 0, 10)
-		if err != nil {
-			return nil, err
-		}
+		// convLastMessages, err := s.GetMessages(conv, 0, 10)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		conv.Messages = convLastMessages
+		// conv.Messages = convLastMessages
 		conversations = append(conversations, conv)
 	}
 
@@ -168,24 +168,24 @@ func (s Sqlite) GetConversations(user model.User) ([]model.Conversation, error) 
 
 func (s Sqlite) GetMessages(conv model.Conversation, offset, limit int) ([]model.Message, error) {
 	rows, err := s.DB.Query(`
-		SELECT conversation_id, value, user_id, username, time
-		FROM MESSAGES JOIN USERS USING(user_id)
-		WHERE conversation_id = $1
+		SELECT conversation_Id, value, user_Id, username, time
+		FROM MESSAGES JOIN USERS USING(user_Id)
+		WHERE conversation_Id = $1
 		ORDER BY time DESC
 		LIMIT $2
 		OFFSET $3
-	`, conv.ID, limit, offset)
+	`, conv.Id, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 
 	var messages = make([]model.Message, 0)
-	var messageID, value, senderID, senderName, datetime string
+	var messageId, value, senderId, senderName, datetime string
 	for rows.Next() {
 		if err := rows.Scan(
-			&messageID,
+			&messageId,
 			&value,
-			&senderID,
+			&senderId,
 			&senderName,
 			&datetime,
 		); err != nil {
@@ -193,14 +193,14 @@ func (s Sqlite) GetMessages(conv model.Conversation, offset, limit int) ([]model
 		}
 
 		messages = append(messages, model.Message{
-			ID:   messageID,
+			Id:   messageId,
 			Text: value,
-			From: model.User{
-				ID:   senderID,
+			From: &model.User{
+				Id:   senderId,
 				Name: senderName,
 			},
-			To:       conv,
-			Datetime: time.Time{},
+			To:       &conv,
+			Datetime: time.Time{}.String(),
 		})
 	}
 

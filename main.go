@@ -1,37 +1,45 @@
 package main
 
 import (
-	"log"
-	"net/http"
-
-	chatDeliveryWebsocket "github.com/vadim-dmitriev/chat/chat/delivery/websocket"
+	"net"
 
 	"github.com/vadim-dmitriev/chat/auth"
-	authDeliveryHTTP "github.com/vadim-dmitriev/chat/auth/delivery/http"
-	"github.com/vadim-dmitriev/chat/chat"
-	"github.com/vadim-dmitriev/chat/server"
-
 	"github.com/vadim-dmitriev/chat/storage"
+	"google.golang.org/grpc"
 )
 
 func main() {
 	sqliteDB := storage.NewSqlite()
 
-	auth := auth.Session{
+	a := auth.Session{
 		Repo: sqliteDB,
 	}
 
-	chat := chat.Chat{
-		Repo: sqliteDB,
+	srv := grpc.NewServer()
+
+	auth.RegisterAuthServiceServer(srv, a)
+
+	list, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		panic(err)
+	}
+	if err := srv.Serve(list); err != nil {
+		panic(err)
 	}
 
-	authDeliveryHTTP.RegisterEndpoints(auth)
-	chatDeliveryWebsocket.RegisterUpgradeToWSEndpoint(chat)
+	// chat := chat.Chat{
+	// 	Repo: sqliteDB,
+	// }
 
-	server.RegisterHTTPStaticEndpoints(auth)
+	// authDeliveryHTTP.RegisterEndpoints(auth)
+	// authDeliveryGRPC.RegisterGRPC(auth)
+	// chatDeliveryWebsocket.RegisterUpgradeToWSEndpoint(chat)
 
-	log.Println("Server started on 0.0.0.0:8080...")
-	defer log.Println("Server stopped")
+	// server.RegisterHTTPStaticEndpoints(auth)
 
-	log.Println(http.ListenAndServe("0.0.0.0:8080", nil))
+	// log.Println("Server started on 0.0.0.0:8080...")
+	// defer log.Println("Server stopped")
+
+	// log.Println(http.ListenAndServe("0.0.0.0:8080", nil))
+
 }

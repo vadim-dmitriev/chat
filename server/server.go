@@ -8,7 +8,7 @@ import (
 	"github.com/vadim-dmitriev/chat/auth"
 )
 
-func RegisterHTTPStaticEndpoints(auth auth.IAuth) {
+func RegisterHTTPStaticEndpoints(auth auth.AuthServiceServer) {
 	signInTemplate, err := newTemplate("./server/static/html/signin.html")
 	signUpTemplate, err := newTemplate("./server/static/html/signup.html")
 	chatTemplate, err := newTemplate("./server/static/html/chat.html")
