@@ -1,22 +1,13 @@
 package chat
 
-import (
-	"github.com/gorilla/websocket"
-	"github.com/vadim-dmitriev/chat/model"
-)
+import "github.com/vadim-dmitriev/chat/model"
 
 type Chat struct {
-	Repo  IRepository
-	Users map[model.User]*websocket.Conn
+	Repo IRepository
 }
 
-func (c Chat) NewUser(user model.User, conn interface{}) {
-	c.Users[user] = conn.(*websocket.Conn)
-}
-
-func (c Chat) SendMessage(message model.Message) error {
-	// TODO: Send message to user(s)
-	return c.Repo.SaveMessage(message)
+func (c Chat) SendMessage(message model.Message, from model.User, to model.Conversation) error {
+	return nil
 }
 
 func (c Chat) GetUserByToken(token string) (model.User, error) {
