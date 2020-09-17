@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	authHeaderName = "Authorization"
+	AuthHeaderName = "Authorization"
 )
 
 type handler struct {
@@ -82,7 +82,7 @@ func (h handler) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Set-Cookie", fmt.Sprintf("%s=%s; HttpOnly; Path=/", authHeaderName, token))
+	w.Header().Add("Set-Cookie", fmt.Sprintf("%s=%s; HttpOnly; Path=/", AuthHeaderName, token))
 }
 
 func isMethodAllow(method string, allowedMethods []string) error {

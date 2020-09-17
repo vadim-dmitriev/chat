@@ -302,12 +302,13 @@ var app = new Vue({
 			);
 		},
 		getConversaions: function () {
-			this.ws.send(
-				JSON.stringify({
-					action: "getConversations"
-				})
+			fetch('/api/v1/conversations', {
+				method: 'GET',
+			}).then(
+				response => response.json().then(
+					response => this.conversations = response.data
+				)
 			);
-
 		},
 		searchUser: function(username) {
 			for (conversation of this.conversations) {

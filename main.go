@@ -7,8 +7,8 @@ import (
 	"github.com/vadim-dmitriev/chat/server"
 	"github.com/vadim-dmitriev/chat/storage"
 
-	chatDeliveryHTTP "github.com/vadim-dmitriev/chat/auth/delivery/http"
 	"github.com/vadim-dmitriev/chat/chat"
+	chatDeliveryHTTP "github.com/vadim-dmitriev/chat/chat/delivery/http"
 	chatDeliveryWebsocket "github.com/vadim-dmitriev/chat/chat/delivery/websocket"
 
 	"github.com/vadim-dmitriev/chat/auth"

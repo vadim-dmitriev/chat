@@ -1,18 +1,12 @@
 package websocket
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 	"github.com/vadim-dmitriev/chat/chat"
 	"github.com/vadim-dmitriev/chat/model"
-)
-
-const (
-	reqGetConversations = "getConversations"
-	reqGetUser          = "getUser"
 )
 
 type upgradeHandler struct {
@@ -63,7 +57,7 @@ func (c client) Serve(conn *websocket.Conn, chat chat.IChat) {
 	}()
 
 	req := request{}
-	res := response{}
+
 	for {
 		err := conn.ReadJSON(&req)
 		switch err.(type) {
@@ -76,29 +70,5 @@ func (c client) Serve(conn *websocket.Conn, chat chat.IChat) {
 			continue
 		}
 		log.Printf("message from client %s: %s", c.Name, req.Action)
-		switch req.Action {
-		case reqGetUser:
-			res.Success = true
-			res.Action = reqGetUser
-			res.Data = map[string]interface{}{
-				"userID": c.ID,
-			}
-			conn.WriteJSON(res)
-
-		case reqGetConversations:
-			convs, err := chat.GetConversations(c.User)
-			if err != nil {
-				fmt.Println(err)
-				res.Success = false
-			} else {
-				res.Success = true
-			}
-			res.Action = reqGetConversations
-			res.Data = convs
-			if err := conn.WriteJSON(res); err != nil {
-				log.Printf("error while writing message to %s: %s", c.Name, err)
-				continue
-			}
-		}
 	}
 }

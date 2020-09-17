@@ -5,5 +5,5 @@ type Conversation struct {
 	ID       string    `json:"id"`
 	Name     string    `json:"name"`
 	IsDialog bool      `json:"is_dialog"`
-	Messages []Message `json:"messages"`
+	Messages []Message `json:"messages,omitempty"`
 }

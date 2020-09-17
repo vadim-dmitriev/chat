@@ -14,7 +14,7 @@ type Middleware struct {
 func (m Middleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		authCookie, err := r.Cookie(authHeaderName)
+		authCookie, err := r.Cookie(AuthHeaderName)
 		if err == http.ErrNoCookie {
 			http.Redirect(w, r, "/signin", http.StatusTemporaryRedirect)
 			return
@@ -26,7 +26,7 @@ func (m Middleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Add("Set-Cookie", fmt.Sprintf("%s=%s; HttpOnly; Path=/", authHeaderName, newToken))
+		w.Header().Add("Set-Cookie", fmt.Sprintf("%s=%s; HttpOnly; Path=/", AuthHeaderName, newToken))
 		next.ServeHTTP(w, r)
 	}
 
