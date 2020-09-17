@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/vadim-dmitriev/chat/auth"
-	"github.com/vadim-dmitriev/chat/model"
 )
 
 const (
@@ -14,7 +13,7 @@ const (
 )
 
 type handler struct {
-	auth auth.AuthServiceServer
+	auth auth.IAuth
 }
 
 type authRequestBody struct {
@@ -47,12 +46,7 @@ func (h handler) signUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := model.User{
-		Name:     body.Username,
-		Password: body.Password,
-	}
-
-	if _, err := h.auth.SignUp(nil, &user); err != nil {
+	if err := h.auth.SignUp(body.Username, body.Password); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		encodeResponse(encoder, err)
 		return
@@ -81,11 +75,7 @@ func (h handler) signIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := model.User{
-		Name:     body.Username,
-		Password: body.Password,
-	}
-	token, err := h.auth.SignIn(nil, &user)
+	token, err := h.auth.SignIn(body.Username, body.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		encodeResponse(encoder, err)

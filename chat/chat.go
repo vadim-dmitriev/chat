@@ -1,16 +1,17 @@
 package chat
 
 import (
+	"github.com/gorilla/websocket"
 	"github.com/vadim-dmitriev/chat/model"
 )
 
 type Chat struct {
-	Repo IRepository
-	// Users map[model.User]*websocket.Conn
+	Repo  IRepository
+	Users map[model.User]*websocket.Conn
 }
 
 func (c Chat) NewUser(user model.User, conn interface{}) {
-	// c.Users[user] = conn.(*websocket.Conn)
+	c.Users[user] = conn.(*websocket.Conn)
 }
 
 func (c Chat) SendMessage(message model.Message) error {

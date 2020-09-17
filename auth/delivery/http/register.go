@@ -7,7 +7,7 @@ import (
 )
 
 // RegisterEndpoints регистрирует API Endtoint`ы, реализующие логику пакета auth
-func RegisterEndpoints(auth auth.AuthServiceServer) {
+func RegisterEndpoints(auth auth.IAuth) {
 	handler := handler{auth}
 
 	http.HandleFunc("/api/v1/signup", handler.signUp)

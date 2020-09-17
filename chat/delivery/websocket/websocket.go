@@ -82,7 +82,7 @@ func (c client) Serve(conn *websocket.Conn, chat chat.IChat) {
 			res.Action = reqGetUser
 			res.Success = true
 			res.Data = map[string]interface{}{
-				"userID": c.Id,
+				"userID": c.ID,
 			}
 			conn.WriteJSON(res)
 
@@ -106,9 +106,9 @@ func (c client) Serve(conn *websocket.Conn, chat chat.IChat) {
 			conversationID := reqData["conversationID"].(string)
 			messageText := reqData["text"].(string)
 			msg := model.Message{
-				From: &c.User,
-				To: &model.Conversation{
-					Id: conversationID,
+				From: c.User,
+				To: model.Conversation{
+					ID: conversationID,
 				},
 				Text: messageText,
 			}

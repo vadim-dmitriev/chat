@@ -1,5 +1,3 @@
 app.db
 messanger
 server/static/js/vuejs.js
-*.pb.go
-*.pb.js
