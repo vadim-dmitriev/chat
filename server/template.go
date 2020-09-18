@@ -3,6 +3,7 @@ package server
 import (
 	tmpl "html/template"
 	"net/http"
+	"path/filepath"
 )
 
 type template struct {
@@ -10,7 +11,7 @@ type template struct {
 }
 
 func newTemplate(path string) (*template, error) {
-	t, err := tmpl.ParseFiles(path)
+	t, err := tmpl.New(filepath.Base(path)).Delims("[[", "]]").ParseFiles(path)
 	if err != nil {
 		return nil, err
 	}
